@@ -24,8 +24,9 @@ Then open the address it prints. Run the tests with `node test.mjs` in any versi
 | `v2-color-curator` | 4322 | Background styles, full colour roles (background, surface, border, text), contrast checks, shades, colour psychology, curated palettes, Tailwind output. |
 | `v3-mcpmarket` | 4323 | Dark mode, an extended 8-12 colour palette with names, colour-blindness simulation, status colours, gradients, 3-layer CSS tokens, a downloadable swatch sheet. |
 | `v4-web-hotel` | 4324 | Ranks colours by how much of the page they cover (full-page screenshot, images left out). A choose step to keep, change or generate each brand colour, similar palettes, hotel property types, photo overlay and Book now checks, interaction states, and Pebble theme, email, booking engine and print exports. |
+| `v5-pebble-theme` | 4325 | A theme-aware Pebble export: point it at a site's theme folder and it reads that site's own `_variables.scss` and searches its styles. Each variable is marked change, new, same, follows (a pointer that updates by itself) or skipped (not in the theme and unused), with how often it's used. It downloads the whole updated file (order, comments and line endings kept), shows the changed lines, covers dependent colours, and warns about knock-on effects (form fields, contrast pairs, saying whether the change causes a problem or it already exists). |
 
-v4's page-coverage ranking opens the page in Microsoft Edge or Google Chrome through `playwright-core` (`npm install` adds it; no browser download). Without it, colours are ranked by how often the site's CSS uses them.
+v4 and v5's page-coverage ranking opens the page in Microsoft Edge or Google Chrome through `playwright-core` (`npm install` adds it; no browser download). Without it, colours are ranked by how often the site's CSS uses them.
 
 ## Credits
 
