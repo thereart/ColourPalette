@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Colour Palette v2</title>
+<style>
+	* { box-sizing: border-box; }
+	body { margin: 0; font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; color: #1c1c1e; background: #f6f6f4; }
+	main { max-width: 1040px; margin: 0 auto; padding: 48px 24px 80px; }
+	h1 { font-size: 28px; margin: 0 0 4px; }
+	h2 { font-size: 20px; margin: 48px 0 4px; }
+	.lead, .hint { color: #5c5c60; margin: 0 0 24px; }
+	form { display: flex; gap: 8px; flex-wrap: wrap; align-items: end; }
+	.field { display: flex; flex-direction: column; gap: 4px; font-size: 14px; font-weight: 600; }
+	.field.grow { flex: 1 1 320px; }
+	input, select { font: inherit; font-weight: 400; padding: 12px 14px; border: 1px solid #c8c8cc; border-radius: 8px; background: #fff; }
+	input:focus-visible, select:focus-visible, button:focus-visible { outline: 3px solid #2b5fd9; outline-offset: 2px; }
+	button { font: inherit; font-weight: 600; padding: 12px 20px; border: 0; border-radius: 8px; background: #1c1c1e; color: #fff; cursor: pointer; }
+	button:disabled { opacity: .6; cursor: wait; }
+	button.secondary { background: #fff; color: #1c1c1e; border: 1px solid #c8c8cc; font-weight: 500; padding: 8px 14px; }
+	.status { margin: 16px 0 0; min-height: 24px; }
+	.error { color: #b3261e; }
+	.notes { padding: 0 0 0 20px; color: #3a3a3e; }
+	.palette { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+	.card { background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e2e4; display: flex; flex-direction: column; }
+	.swatch { all: unset; cursor: pointer; display: block; height: 120px; padding: 12px; font-weight: 600; }
+	.swatch:focus-visible { outline: 3px solid #2b5fd9; outline-offset: -3px; }
+	.card .body { padding: 12px; font-size: 14px; }
+	.role { font-weight: 600; text-transform: capitalize; margin: 0; }
+	.was { display: flex; align-items: center; gap: 6px; color: #5c5c60; margin: 4px 0; }
+	.chip { display: inline-block; width: 16px; height: 16px; border-radius: 4px; border: 1px solid rgba(0,0,0,.15); vertical-align: middle; }
+	.card ul { margin: 8px 0 0; padding-left: 18px; color: #3a3a3e; }
+	.ok { color: #1e6b34; margin: 8px 0 0; }
+	.meta { margin: 2px 0; color: #3a3a3e; }
+	.meta strong { font-weight: 600; }
+	.usage { margin: 8px 0 0; padding: 6px 8px; background: #f3f3f1; border-radius: 6px; }
+	.feel { margin: 8px 0 0; padding: 6px 8px; border-left: 3px solid #c8c8cc; color: #3a3a3e; }
+	table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e2e2e4; border-radius: 12px; overflow: hidden; font-size: 14px; }
+	th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #ececee; }
+	th { background: #fafafa; font-weight: 600; }
+	td code { font-size: 13px; }
+	.pass { color: #1e6b34; font-weight: 600; }
+	.fail { color: #b3261e; font-weight: 600; }
+	.preview { border-radius: 12px; overflow: hidden; border: 1px solid #e2e2e4; }
+	.preview .site { padding: 32px; }
+	.preview .site h3 { margin: 0 0 8px; font-size: 26px; }
+	.preview .site p { margin: 0 0 12px; max-width: 60ch; }
+	.preview .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 24px; }
+	.preview .tile { padding: 20px; border-radius: 10px; border: 1px solid; }
+	.preview .tile h4 { margin: 0 0 6px; font-size: 18px; }
+	.preview .btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+	.preview .btn { display: inline-block; padding: 10px 18px; border-radius: 8px; font-weight: 600; }
+	.scale { display: grid; grid-template-columns: repeat(11, 1fr); border-radius: 10px; overflow: hidden; border: 1px solid #e2e2e4; margin-bottom: 12px; }
+	.scale .swatch { height: 64px; padding: 6px; font-size: 11px; display: flex; flex-direction: column; justify-content: end; }
+	.scale-label { font-weight: 600; margin: 0 0 6px; text-transform: capitalize; }
+	.curated { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+	.curated .mini { display: flex; height: 64px; }
+	.curated .mini div { flex: 1; }
+	.all { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+	.all .swatch { height: 72px; font-size: 13px; border-radius: 8px; border: 1px solid #e2e2e4; }
+	.all .swatch small { display: block; font-weight: 400; opacity: .8; }
+	.strip { display: flex; height: 56px; border-radius: 10px; overflow: hidden; filter: grayscale(1); border: 1px solid #e2e2e4; }
+	.strip div { flex: 1; }
+	pre { background: #1c1c1e; color: #f6f6f4; padding: 16px; border-radius: 10px; overflow-x: auto; font-size: 13px; max-height: 360px; }
+	.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+	.credit { margin-top: 48px; font-size: 13px; color: #5c5c60; }
+	.credit a { color: inherit; }
+	[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+	<h1>Colour Palette <small style="font-weight:400;color:#5c5c60">v2</small></h1>
+	<p class="lead">Paste a website address to see the colours it uses, a suggested 5-colour palette, and a full colour scheme for the site.</p>
+
+	<form id="form">
+		<div class="field grow">
+			<label for="url">Website address</label>
+			<input id="url" type="text" placeholder="e.g. www.example.com" required autocomplete="url">
+		</div>
+		<div class="field">
+			<label for="bg">Background style</label>
+			<select id="bg">
+				<option value="white">Pure white</option>
+				<option value="offwhite">Off-white (warm)</option>
+				<option value="tinted">Light tinted</option>
+				<option value="dark">Dark / moody</option>
+			</select>
+		</div>
+		<button id="go" type="submit">Get colours</button>
+	</form>
+	<p id="status" class="status" role="status" aria-live="polite"></p>
+
+	<section id="results" hidden>
+		<h2>Preview</h2>
+		<p class="hint">How the scheme looks on a simple page. Change the background style above to compare.</p>
+		<div id="preview" class="preview"></div>
+
+		<h2>Suggested palette</h2>
+		<p class="hint">Click a colour to copy its code. <span id="mood"></span></p>
+		<ul id="notes" class="notes"></ul>
+		<div id="palette" class="palette"></div>
+
+		<h2>Colour roles</h2>
+		<p class="hint">Which colour to use for what, on the <span id="bg-label"></span> background.</p>
+		<table>
+			<thead><tr><th>Role</th><th>Colour</th><th>Use for</th></tr></thead>
+			<tbody id="roles"></tbody>
+		</table>
+
+		<h2>Contrast checks</h2>
+		<p class="hint">Text needs 4.5:1 to be readable; buttons and other interactive elements need 3:1 to stand out.</p>
+		<table>
+			<thead><tr><th>Check</th><th>Ratio</th><th>Needs</th><th>Result</th></tr></thead>
+			<tbody id="checks"></tbody>
+		</table>
+
+		<h2>Shades</h2>
+		<p class="hint">Lighter and darker versions for hovers, tints and backgrounds. 500 is the colour itself.</p>
+		<div id="shades"></div>
+
+		<h2>Curated palettes in a similar mood</h2>
+		<p class="hint">Ready-made palettes close to this site's primary colour and background, for inspiration.</p>
+		<div id="curated" class="curated"></div>
+
+		<h2>Greyscale check</h2>
+		<p class="hint">If two colours look the same here, they only differ by hue, and many people won't be able to tell them apart.</p>
+		<div id="grey" class="strip"></div>
+
+		<h2>For developers</h2>
+		<p class="hint">CSS variables and a Tailwind colour config for the whole scheme.</p>
+		<pre id="css"></pre>
+		<pre id="tailwind"></pre>
+		<div class="actions">
+			<button class="secondary" type="button" id="copy-css">Copy CSS variables</button>
+			<button class="secondary" type="button" id="copy-tw">Copy Tailwind config</button>
+			<button class="secondary" type="button" id="dl-palette">Download scheme (JSON)</button>
+			<button class="secondary" type="button" id="dl-colours">Download all colours (JSON)</button>
+		</div>
+
+		<h2>All colours found on the site</h2>
+		<p class="hint" id="all-hint"></p>
+		<div id="all" class="all"></div>
+	</section>
+	<p class="credit">
+		Palette rules based on the <a href="https://github.com/meodai/skill.color-expert" target="_blank" rel="noopener">color-expert skill</a> by David Aerne (CC BY 4.0)
+		and the <a href="https://github.com/davepoon/buildwithclaude/tree/main/plugins/frontend-design-pro/skills/color-curator" target="_blank" rel="noopener">color-curator skill</a> by Dave Poon (MIT).
+	</p>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let data = null;
+
+// Picks black or white text for a background, by WCAG luminance.
+function textFor(hex) {
+	const [r, g, b] = [1, 3, 5].map((i) => {
+		const v = parseInt(hex.slice(i, i + 2), 16) / 255;
+		return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+	});
+	return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.179 ? '#000' : '#fff';
+}
+
+function swatch(hex, label) {
+	const b = document.createElement('button');
+	b.type = 'button';
+	b.className = 'swatch';
+	b.style.background = hex;
+	b.style.color = textFor(hex);
+	b.innerHTML = label;
+	b.setAttribute('aria-label', `Copy ${hex}`);
+	b.addEventListener('click', () => copy(hex, `Copied ${hex}`));
+	return b;
+}
+
+async function copy(text, message) {
+	await navigator.clipboard.writeText(text);
+	setStatus(message);
+}
+
+function setStatus(text, isError = false) {
+	$('status').textContent = text;
+	$('status').className = 'status' + (isError ? ' error' : '');
+}
+
+function download(obj, name) {
+	const a = document.createElement('a');
+	a.href = URL.createObjectURL(new Blob([JSON.stringify(obj, null, '\t')], { type: 'application/json' }));
+	a.download = name;
+	a.click();
+	URL.revokeObjectURL(a.href);
+}
+
+// APCA Lc guide levels.
+const readability = (lc) => (lc >= 90 ? 'ideal for body text' : lc >= 75 ? 'good for body text' : lc >= 60 ? 'large text' : lc >= 45 ? 'headlines only' : 'not for text');
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const chip = (hex) => `<span class="chip" style="background:${hex}"></span>`;
+
+function renderPreview(d) {
+	const r = Object.fromEntries(d.roles.map((x) => [x.key, x.hex]));
+	const on = (role) => d.palette.find((p) => p.role === role).textColour;
+	$('preview').innerHTML = `
+		<div class="site" style="background:${r.background};color:${r['text-secondary']}">
+			<h3 style="color:${r['text-primary']}">Welcome to your website</h3>
+			<p>This is body text in the secondary text colour. Here is <a href="#" style="color:${r.link}" onclick="return false">a text link</a> in the link colour.</p>
+			<p style="color:${r['text-muted']};font-size:14px">A caption in the muted text colour.</p>
+			<div class="btns">
+				<span class="btn" style="background:${r.primary};color:${on('primary')}">Primary button</span>
+				<span class="btn" style="background:${r.accent};color:${on('accent')}">Book now</span>
+			</div>
+			<div class="cards">
+				${['Rooms', 'Location'].map((t) => `<div class="tile" style="background:${r.surface};border-color:${r.border}">
+					<h4 style="color:${r['text-primary']}">${t}</h4>
+					<p style="margin:0">A card on the surface colour, with a border.</p>
+					<p style="margin:8px 0 0;color:${r.secondary};font-weight:600">Secondary colour detail</p>
+				</div>`).join('')}
+			</div>
+		</div>`;
+}
+
+function render({ colours, design }) {
+	renderPreview(design);
+	$('mood').textContent = `Closest mood: ${design.mood}.`;
+	$('notes').innerHTML = [...data.palette.notes, ...design.notes].map((n) => `<li>${esc(n)}</li>`).join('');
+
+	$('palette').replaceChildren(...design.palette.map((p) => {
+		const card = document.createElement('div');
+		card.className = 'card';
+		card.append(swatch(p.hex, p.hex.toUpperCase()));
+		const changed = p.original && p.original !== p.hex;
+		const best = Math.max(p.wcag.white, p.wcag.darkText);
+		const psych = design.psychology.find((x) => x.role === p.role);
+		const body = document.createElement('div');
+		body.className = 'body';
+		body.innerHTML = `<p class="role">${p.role}</p>`
+			+ `<p class="meta">${p.character} ${psych ? psych.name : p.name}${p.harmony && p.role !== 'primary' ? `, ${p.harmony} to primary` : ''}</p>`
+			+ (changed ? `<p class="was">${chip(p.original)} Was ${p.original.toUpperCase()}</p>` : '')
+			+ (!p.original ? '<p class="was">New colour</p>' : '')
+			+ `<p class="meta">Use with <strong>${p.useWith}</strong></p>`
+			+ `<p class="meta" title="WCAG contrast ratio and APCA lightness contrast of that text on this colour">${best.toFixed(1)}:1 · APCA Lc ${p.apca} (${readability(p.apca)})</p>`
+			+ (psych ? `<p class="feel"><strong>Feels:</strong> ${esc(psych.feel)}<br><strong>Suits:</strong> ${esc(psych.bestFor)}<br>${esc(psych.temperature)}</p>` : '')
+			+ `<p class="meta usage">${esc(p.usage)}</p>`
+			+ (p.changes.length ? `<ul>${p.changes.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>` : '<p class="ok">Kept as it is.</p>');
+		card.append(body);
+		return card;
+	}));
+
+	$('bg-label').textContent = design.backgroundLabel.toLowerCase();
+	$('roles').innerHTML = design.roles.map((r) => `<tr><td>${r.role}</td><td>${chip(r.hex)} <code>${r.hex}</code></td><td>${esc(r.usage)}</td></tr>`).join('');
+	$('checks').innerHTML = design.checks.map((c) => `<tr><td>${c.label}</td><td>${c.ratio}:1</td><td>${c.min}:1</td><td class="${c.pass ? 'pass' : 'fail'}">${c.pass ? 'Pass' : 'Fail'}</td></tr>`).join('');
+
+	$('shades').replaceChildren(...Object.entries(design.shades).flatMap(([name, scale]) => {
+		const label = Object.assign(document.createElement('p'), { className: 'scale-label', textContent: name });
+		const row = Object.assign(document.createElement('div'), { className: 'scale' });
+		row.append(...Object.entries(scale).map(([step, hex]) => swatch(hex, `${step}<br>${hex.toUpperCase()}`)));
+		return [label, row];
+	}));
+
+	$('curated').innerHTML = design.curated.map((p) => `<div class="card">
+		<div class="mini">${Object.values(p.colours).map((hex) => `<div style="background:${hex}" title="${hex}"></div>`).join('')}</div>
+		<div class="body"><p class="role">${esc(p.name)}</p><p class="meta">${esc(p.mood)}</p>
+		<p class="meta">${Object.entries(p.colours).map(([k, hex]) => `${chip(hex)} <code>${hex}</code> ${k === 'extra' ? '' : k}`).join('<br>')}</p></div>
+	</div>`).join('');
+
+	$('grey').replaceChildren(...design.palette.map((p) => Object.assign(document.createElement('div'), { title: p.role, style: `background:${p.hex}` })));
+	$('css').textContent = design.css;
+	$('tailwind').textContent = design.tailwind;
+
+	$('all-hint').textContent = `${colours.totalColours} colours, most used first. Images are left out.`;
+	$('all').replaceChildren(...colours.colours.map((c) => swatch(c.hex, `${c.hex.toUpperCase()}<small>used ${c.count}×</small>`)));
+	$('results').hidden = false;
+}
+
+async function load(fresh) {
+	const url = $('url').value.trim();
+	if (!url) return;
+	$('go').disabled = true;
+	setStatus(fresh ? 'Reading the website… this can take up to a minute.' : 'Updating…');
+	try {
+		const res = await fetch(`/api/palette?url=${encodeURIComponent(url)}&bg=${$('bg').value}${fresh ? '&fresh=1' : ''}`);
+		const json = await res.json();
+		if (!res.ok) throw new Error(json.error);
+		data = json;
+		render(json);
+		setStatus(`Done: ${json.colours.url}`);
+	} catch (err) {
+		setStatus(err.message || 'Something went wrong. Is the Colour Palette window still open?', true);
+	} finally {
+		$('go').disabled = false;
+	}
+}
+
+$('form').addEventListener('submit', (e) => { e.preventDefault(); load(true); });
+$('bg').addEventListener('change', () => data && load(false));
+
+const host = () => new URL(data.colours.url).hostname;
+$('copy-css').addEventListener('click', () => copy(data.design.css, 'Copied the CSS variables'));
+$('copy-tw').addEventListener('click', () => copy(data.design.tailwind, 'Copied the Tailwind config'));
+$('dl-palette').addEventListener('click', () => download({ ...data.palette, ...data.design }, `scheme-${host()}-${data.design.background}.json`));
+$('dl-colours').addEventListener('click', () => download(data.colours, `colours-${host()}.json`));
+</script>
+</body>
+</html>

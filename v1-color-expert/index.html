@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Colour Palette</title>
+<style>
+	* { box-sizing: border-box; }
+	body { margin: 0; font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; color: #1c1c1e; background: #f6f6f4; }
+	main { max-width: 1040px; margin: 0 auto; padding: 48px 24px 80px; }
+	h1 { font-size: 28px; margin: 0 0 4px; }
+	h2 { font-size: 20px; margin: 48px 0 4px; }
+	.lead, .hint { color: #5c5c60; margin: 0 0 24px; }
+	form { display: flex; gap: 8px; flex-wrap: wrap; }
+	label { position: absolute; left: -9999px; }
+	input { flex: 1 1 320px; font: inherit; padding: 12px 14px; border: 1px solid #c8c8cc; border-radius: 8px; background: #fff; }
+	input:focus-visible, button:focus-visible { outline: 3px solid #2b5fd9; outline-offset: 2px; }
+	button { font: inherit; font-weight: 600; padding: 12px 20px; border: 0; border-radius: 8px; background: #1c1c1e; color: #fff; cursor: pointer; }
+	button:disabled { opacity: .6; cursor: wait; }
+	button.secondary { background: #fff; color: #1c1c1e; border: 1px solid #c8c8cc; font-weight: 500; padding: 8px 14px; }
+	.status { margin: 16px 0 0; min-height: 24px; }
+	.error { color: #b3261e; }
+	.notes { padding: 0 0 0 20px; color: #3a3a3e; }
+	.palette { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+	.card { background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e2e4; display: flex; flex-direction: column; }
+	.swatch { all: unset; cursor: pointer; display: block; height: 120px; padding: 12px; font-weight: 600; }
+	.swatch:focus-visible { outline: 3px solid #2b5fd9; outline-offset: -3px; }
+	.card .body { padding: 12px; font-size: 14px; }
+	.role { font-weight: 600; text-transform: capitalize; margin: 0; }
+	.was { display: flex; align-items: center; gap: 6px; color: #5c5c60; margin: 4px 0; }
+	.chip { display: inline-block; width: 16px; height: 16px; border-radius: 4px; border: 1px solid rgba(0,0,0,.15); }
+	.card ul { margin: 8px 0 0; padding-left: 18px; color: #3a3a3e; }
+	.ok { color: #1e6b34; margin: 8px 0 0; }
+	.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+	.all { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+	.all .swatch { height: 72px; font-size: 13px; border-radius: 8px; border: 1px solid #e2e2e4; }
+	.all .swatch small { display: block; font-weight: 400; opacity: .8; }
+	.meta { margin: 2px 0; color: #3a3a3e; }
+	.meta strong { font-weight: 600; }
+	.usage { margin: 8px 0 0; padding: 6px 8px; background: #f3f3f1; border-radius: 6px; }
+	.strip { display: flex; height: 56px; border-radius: 10px; overflow: hidden; filter: grayscale(1); border: 1px solid #e2e2e4; }
+	.strip div { flex: 1; }
+	pre { background: #1c1c1e; color: #f6f6f4; padding: 16px; border-radius: 10px; overflow-x: auto; font-size: 13px; }
+	.credit { margin-top: 48px; font-size: 13px; color: #5c5c60; }
+	.credit a { color: inherit; }
+	[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+	<h1>Colour Palette</h1>
+	<p class="lead">Paste a website address to see the colours it uses and a suggested 5-colour palette for the web.</p>
+
+	<form id="form">
+		<label for="url">Website address</label>
+		<input id="url" type="text" placeholder="e.g. www.example.com" required autocomplete="url">
+		<button id="go" type="submit">Get colours</button>
+	</form>
+	<p id="status" class="status" role="status" aria-live="polite"></p>
+
+	<section id="results" hidden>
+		<h2>Suggested palette</h2>
+		<p class="hint">Click a colour to copy its code.</p>
+		<ul id="notes" class="notes"></ul>
+		<div id="palette" class="palette"></div>
+		<h2>Greyscale check</h2>
+		<p class="hint">If two colours look the same here, they only differ by hue, and many people won't be able to tell them apart.</p>
+		<div id="grey" class="strip"></div>
+
+		<h2>For developers</h2>
+		<p class="hint">CSS variables: the palette, plus roles (surface, text, link, hover) to use in components.</p>
+		<pre id="css"></pre>
+		<div class="actions">
+			<button class="secondary" type="button" id="copy-css">Copy CSS variables</button>
+			<button class="secondary" type="button" id="dl-palette">Download palette (JSON)</button>
+			<button class="secondary" type="button" id="dl-colours">Download all colours (JSON)</button>
+		</div>
+
+		<h2>All colours found on the site</h2>
+		<p class="hint" id="all-hint"></p>
+		<div id="all" class="all"></div>
+	</section>
+	<p class="credit">Palette rules based on the <a href="https://github.com/meodai/skill.color-expert" target="_blank" rel="noopener">color-expert skill</a> by David Aerne (CC BY 4.0).</p>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let data = null;
+
+// Picks black or white text for a background, by WCAG luminance.
+function textFor(hex) {
+	const [r, g, b] = [1, 3, 5].map((i) => {
+		const v = parseInt(hex.slice(i, i + 2), 16) / 255;
+		return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+	});
+	return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.179 ? '#000' : '#fff';
+}
+
+function swatch(hex, label) {
+	const b = document.createElement('button');
+	b.type = 'button';
+	b.className = 'swatch';
+	b.style.background = hex;
+	b.style.color = textFor(hex);
+	b.innerHTML = label;
+	b.setAttribute('aria-label', `Copy ${hex}`);
+	b.addEventListener('click', () => copy(hex, `Copied ${hex}`));
+	return b;
+}
+
+async function copy(text, message) {
+	await navigator.clipboard.writeText(text);
+	setStatus(message);
+}
+
+function setStatus(text, isError = false) {
+	$('status').textContent = text;
+	$('status').className = 'status' + (isError ? ' error' : '');
+}
+
+function download(obj, name) {
+	const a = document.createElement('a');
+	a.href = URL.createObjectURL(new Blob([JSON.stringify(obj, null, '\t')], { type: 'application/json' }));
+	a.download = name;
+	a.click();
+	URL.revokeObjectURL(a.href);
+}
+
+// APCA Lc guide levels.
+const readability = (lc) => (lc >= 90 ? 'ideal for body text' : lc >= 75 ? 'good for body text' : lc >= 60 ? 'large text' : lc >= 45 ? 'headlines only' : 'not for text');
+
+const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+function render({ colours, palette }) {
+	$('notes').innerHTML = palette.notes.map((n) => `<li>${esc(n)}</li>`).join('');
+
+	$('palette').replaceChildren(...palette.palette.map((p) => {
+		const card = document.createElement('div');
+		card.className = 'card';
+		card.append(swatch(p.hex, p.hex.toUpperCase()));
+		const changed = p.original && p.original !== p.hex;
+		const body = document.createElement('div');
+		body.className = 'body';
+		const best = Math.max(p.wcag.white, p.wcag.darkText);
+		body.innerHTML = `<p class="role">${p.role}</p>`
+			+ `<p class="meta">${p.character} ${p.name}${p.harmony && p.role !== 'primary' ? `, ${p.harmony} to primary` : ''}</p>`
+			+ (changed ? `<p class="was"><span class="chip" style="background:${p.original}"></span> Was ${p.original.toUpperCase()}</p>` : '')
+			+ (!p.original ? '<p class="was">New colour</p>' : '')
+			+ `<p class="meta">Use with <strong>${p.useWith}</strong></p>`
+			+ `<p class="meta" title="WCAG contrast ratio and APCA lightness contrast of that text on this colour">${best.toFixed(1)}:1 · APCA Lc ${p.apca} (${readability(p.apca)})</p>`
+			+ `<p class="meta usage">${esc(p.usage)}</p>`
+			+ (p.changes.length ? `<ul>${p.changes.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>` : '<p class="ok">Kept as it is.</p>');
+		card.append(body);
+		return card;
+	}));
+
+	$('grey').replaceChildren(...palette.palette.map((p) => Object.assign(document.createElement('div'), { title: p.role, style: `background:${p.hex}` })));
+	$('css').textContent = palette.css;
+
+	$('all-hint').textContent = `${colours.totalColours} colours, most used first. Images are left out.`;
+	$('all').replaceChildren(...colours.colours.map((c) => swatch(c.hex, `${c.hex.toUpperCase()}<small>used ${c.count}×</small>`)));
+	$('results').hidden = false;
+}
+
+$('form').addEventListener('submit', async (e) => {
+	e.preventDefault();
+	const url = $('url').value.trim();
+	$('go').disabled = true;
+	setStatus('Reading the website… this can take up to a minute.');
+	try {
+		const res = await fetch('/api/palette?url=' + encodeURIComponent(url));
+		const json = await res.json();
+		if (!res.ok) throw new Error(json.error);
+		data = json;
+		render(json);
+		setStatus(`Done: ${json.colours.url}`);
+	} catch (err) {
+		setStatus(err.message || 'Something went wrong. Is the Colour Palette window still open?', true);
+	} finally {
+		$('go').disabled = false;
+	}
+});
+
+const host = () => new URL(data.colours.url).hostname;
+$('copy-css').addEventListener('click', () => copy(data.palette.css, 'Copied the CSS variables'));
+$('dl-palette').addEventListener('click', () => download(data.palette, `palette-${host()}.json`));
+$('dl-colours').addEventListener('click', () => download(data.colours, `colours-${host()}.json`));
+</script>
+</body>
+</html>

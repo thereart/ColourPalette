@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Colour Palette v4</title>
+<style>
+	* { box-sizing: border-box; }
+	body { margin: 0; font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; color: #1c1c1e; background: #f6f6f4; }
+	main { max-width: 1080px; margin: 0 auto; padding: 48px 24px 80px; }
+	h1 { font-size: 28px; margin: 0 0 4px; }
+	h2 { font-size: 20px; margin: 56px 0 4px; }
+	h3 { font-size: 16px; margin: 20px 0 8px; }
+	.lead, .hint { color: #5c5c60; margin: 0 0 20px; }
+	nav { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 24px 0 0; font-size: 14px; }
+	nav a { color: #2b5fd9; }
+	form { display: flex; gap: 8px; flex-wrap: wrap; align-items: end; }
+	.field { display: flex; flex-direction: column; gap: 4px; font-size: 14px; font-weight: 600; }
+	.field.grow { flex: 1 1 320px; }
+	input, select { font: inherit; font-weight: 400; padding: 12px 14px; border: 1px solid #c8c8cc; border-radius: 8px; background: #fff; }
+	input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible { outline: 3px solid #2b5fd9; outline-offset: 2px; }
+	button { font: inherit; font-weight: 600; padding: 12px 20px; border: 0; border-radius: 8px; background: #1c1c1e; color: #fff; cursor: pointer; }
+	button:disabled { opacity: .6; cursor: wait; }
+	button.secondary { background: #fff; color: #1c1c1e; border: 1px solid #c8c8cc; font-weight: 500; padding: 8px 14px; }
+	.status { margin: 16px 0 0; min-height: 24px; }
+	.error { color: #b3261e; }
+	.notes { padding: 0 0 0 20px; color: #3a3a3e; }
+	.notes li { margin-bottom: 4px; }
+	.palette { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+	.card { background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e2e4; display: flex; flex-direction: column; }
+	.swatch { all: unset; cursor: pointer; display: block; height: 120px; padding: 12px; font-weight: 600; }
+	.swatch:focus-visible { outline: 3px solid #2b5fd9; outline-offset: -3px; }
+	.card .body { padding: 12px; font-size: 14px; }
+	.role { font-weight: 600; text-transform: capitalize; margin: 0; }
+	.was { display: flex; align-items: center; gap: 6px; color: #5c5c60; margin: 4px 0; }
+	.chip { display: inline-block; width: 16px; height: 16px; border-radius: 4px; border: 1px solid rgba(0,0,0,.15); vertical-align: middle; }
+	.card ul { margin: 8px 0 0; padding-left: 18px; color: #3a3a3e; }
+	.ok { color: #1e6b34; margin: 8px 0 0; }
+	.meta { margin: 2px 0; color: #3a3a3e; }
+	.meta strong { font-weight: 600; }
+	.usage { margin: 8px 0 0; padding: 6px 8px; background: #f3f3f1; border-radius: 6px; }
+	.feel { margin: 8px 0 0; padding: 6px 8px; border-left: 3px solid #c8c8cc; color: #3a3a3e; }
+	table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e2e2e4; font-size: 14px; }
+	th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #ececee; vertical-align: top; }
+	th { background: #fafafa; font-weight: 600; }
+	td code { font-size: 13px; }
+	.pass { color: #1e6b34; font-weight: 600; }
+	.fail { color: #b3261e; font-weight: 600; }
+	.preview { border-radius: 12px; overflow: hidden; border: 1px solid #e2e2e4; }
+	.preview .site { padding: 32px; }
+	.preview .site h3 { margin: 0 0 8px; font-size: 26px; }
+	.preview .site p { margin: 0 0 12px; max-width: 60ch; }
+	.preview .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 24px; }
+	.preview .tile { padding: 20px; border-radius: 10px; border: 1px solid; }
+	.preview .tile h4 { margin: 0 0 6px; font-size: 18px; }
+	.preview .btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+	.preview .btn { display: inline-block; padding: 10px 18px; border-radius: 8px; font-weight: 600; }
+	.preview .alert { margin-top: 16px; padding: 10px 14px; border-radius: 8px; border-left: 4px solid; font-size: 14px; }
+	.ext-group { margin-bottom: 20px; }
+	.ext { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+	.ext dl { margin: 0; padding: 12px; font-size: 13px; display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; }
+	.ext dt { font-weight: 600; }
+	.ext dd { margin: 0; }
+	.dots { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+	.dot { width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(0,0,0,.12); }
+	.scale { display: grid; grid-template-columns: repeat(11, 1fr); border-radius: 10px; overflow: hidden; border: 1px solid #e2e2e4; margin-bottom: 12px; }
+	.scale .swatch { height: 76px; padding: 6px; font-size: 11px; display: flex; flex-direction: column; justify-content: end; }
+	.scale .swatch.base { box-shadow: inset 0 0 0 3px currentColor; }
+	.scale-label { font-weight: 600; margin: 0 0 6px; text-transform: capitalize; }
+	.semantic { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+	.semantic .row { display: flex; height: 56px; }
+	.semantic .row .swatch { flex: 1; height: auto; font-size: 11px; padding: 6px; }
+	.cvd { display: grid; gap: 12px; }
+	.cvd .row { display: flex; height: 48px; border-radius: 8px; overflow: hidden; border: 1px solid #e2e2e4; }
+	.cvd .row div { flex: 1; font-size: 11px; padding: 4px 6px; display: flex; align-items: end; }
+	.grads { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+	.grads .fill { height: 120px; }
+	.curated { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+	.curated .mini { display: flex; height: 64px; }
+	.curated .mini div { flex: 1; }
+	.all { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+	.all .swatch { height: 72px; font-size: 13px; border-radius: 8px; border: 1px solid #e2e2e4; }
+	.all .swatch small { display: block; font-weight: 400; opacity: .8; }
+	.tabs { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+	.tabs button[aria-selected="true"] { background: #1c1c1e; color: #fff; }
+	pre { background: #1c1c1e; color: #f6f6f4; padding: 16px; border-radius: 10px; overflow: auto; font-size: 13px; max-height: 420px; margin: 0; }
+	.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+	.credit { margin-top: 48px; font-size: 13px; color: #5c5c60; }
+	.credit a { color: inherit; }
+	.settings { margin-top: 16px; background: #fff; border: 1px solid #e2e2e4; border-radius: 12px; padding: 4px 16px 16px; }
+	.settings summary { cursor: pointer; font-weight: 600; padding: 10px 0; }
+	.hint-inline { font-weight: 400; color: #5c5c60; font-size: 14px; margin-left: 8px; }
+	.settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+	fieldset { border: 1px solid #ececee; border-radius: 10px; padding: 12px 14px; margin: 0; display: grid; gap: 12px; align-content: start; }
+	legend { font-weight: 600; padding: 0 6px; }
+	.settings .field select, .settings .field input[type=file] { margin-top: 4px; }
+	.settings input[type=file] { font: inherit; font-size: 14px; }
+	.sub { font-weight: 400; color: #5c5c60; font-size: 13px; }
+	.switch { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; cursor: pointer; }
+	.switch input { appearance: none; flex: none; width: 38px; height: 22px; border-radius: 11px; background: #c8c8cc; position: relative; cursor: pointer; margin: 0; transition: background-color .15s; }
+	.switch input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .15s; }
+	.switch input:checked { background: #1e6b34; }
+	.switch input:checked::after { transform: translateX(16px); }
+	.switch input:focus-visible { outline: 3px solid #2b5fd9; outline-offset: 2px; }
+	.switch input:disabled { opacity: .5; cursor: not-allowed; }
+	@media (prefers-reduced-motion: reduce) { .switch input, .switch input::after { transition: none; } }
+	.guidance { padding: 12px 14px; background: #fff; border-left: 4px solid #1e6b34; border-radius: 6px; margin: 0 0 12px; }
+	.photo-demo { position: relative; display: grid; grid-template-columns: 1fr 1fr; border-radius: 12px; overflow: hidden; margin-bottom: 12px; min-height: 200px; }
+	.photo-demo .shot { position: relative; display: flex; flex-direction: column; justify-content: end; padding: 20px; color: #fff; }
+	.photo-demo .shot h4 { margin: 0 0 10px; font-size: 22px; position: relative; }
+	.photo-demo .shot .btn { position: relative; align-self: start; padding: 10px 18px; border-radius: 8px; font-weight: 600; }
+	.photo-demo .shot::before { content: ""; position: absolute; inset: 0; background: var(--scrim); }
+	.photo-demo .shot > * { position: relative; }
+	.states-demo { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; padding: 20px; border-radius: 12px; border: 1px solid #e2e2e4; margin-bottom: 12px; }
+	.states-demo span { padding: 10px 14px; border-radius: 8px; font-weight: 600; text-align: center; font-size: 14px; }
+	.states-demo small { display: block; font-weight: 400; font-size: 11px; opacity: .85; }
+	.choose-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+	.choose-card { overflow: visible; } /* so the colour picker's list can open past the card */
+	.choose-card .swatch { height: 110px; cursor: default; display: flex; flex-direction: column; justify-content: space-between; border-radius: 11px 11px 0 0; }
+	.choose-card .swatch small { font-weight: 400; opacity: .85; }
+	.choose-card .was-chip { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #5c5c60; margin: 6px 0 0; }
+	.choose-card fieldset { border: 0; padding: 0; margin: 10px 0 0; display: flex; gap: 6px; }
+	.choose-card legend { position: absolute; left: -9999px; }
+	.choose-card .toggle { flex: 1; }
+	.choose-card .toggle input { position: absolute; opacity: 0; }
+	.choose-card .toggle span { display: block; text-align: center; padding: 8px; border: 1px solid #c8c8cc; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; }
+	.choose-card .toggle input:checked + span { background: #1c1c1e; border-color: #1c1c1e; color: #fff; }
+	.choose-card .toggle input:focus-visible + span { outline: 3px solid #2b5fd9; outline-offset: 2px; }
+	.choose-card .toggle input:disabled + span { opacity: .45; cursor: not-allowed; }
+	.choose-card .change { margin-top: 10px; display: grid; gap: 6px; }
+	.choose-card .regen { width: 100%; }
+	.picker { position: relative; }
+	.picker-btn, .picker-opt { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; cursor: pointer; font-size: 14px; }
+	.picker-btn { border: 1px solid #c8c8cc; border-radius: 8px; background: #fff; }
+	.picker-btn:focus-visible, .picker-opt:focus-visible { outline: 3px solid #2b5fd9; outline-offset: -3px; }
+	.picker-chip { flex: none; width: 28px; height: 28px; border-radius: 6px; border: 1px solid rgba(0,0,0,.15); }
+	.picker-text { flex: 1; min-width: 0; line-height: 1.3; }
+	.picker-text small { display: block; color: #5c5c60; font-size: 12px; }
+	.picker-caret { color: #5c5c60; }
+	.picker-list { position: absolute; z-index: 10; left: 0; right: 0; top: calc(100% + 4px); background: #fff; border: 1px solid #c8c8cc; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.12); max-height: 320px; overflow-y: auto; padding: 4px; }
+	.picker-opt { border-radius: 6px; }
+	.picker-opt:hover { background: #f3f3f1; }
+	.picker-opt[aria-pressed="true"] { background: #eef3fd; }
+	.similar { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+	.similar-strip { display: flex; height: 84px; }
+	.similar-strip div { flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 6px; font-size: 10px; font-weight: 600; min-width: 0; overflow: hidden; }
+	.similar-card .meta { margin-bottom: 10px; }
+	.choose-card .reason { font-size: 13px; color: #3a3a3e; margin: 0; }
+	.choose-card .tip { font-size: 13px; color: #8a5300; margin: 6px 0 0; }
+	[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+	<h1>Colour Palette <small style="font-weight:400;color:#5c5c60">v4</small></h1>
+	<p class="lead">Paste a website address to see the colours it uses, a suggested palette, and a complete colour system for the site, tuned for the web and for hotel branding.</p>
+
+	<form id="form">
+		<div class="field grow">
+			<label for="url">Website address</label>
+			<input id="url" type="text" placeholder="e.g. www.example.com" required autocomplete="url">
+		</div>
+		<button id="go" type="submit">Get colours</button>
+	</form>
+
+	<details class="settings" open>
+		<summary>Settings <span class="hint-inline">Changes apply straight away and are remembered on this computer.</span></summary>
+		<div class="settings-grid">
+			<fieldset>
+				<legend>Hotel</legend>
+				<label class="field">Property type
+					<select data-opt="property"><option value="none">Not set</option></select>
+				</label>
+				<label class="field">Background style
+					<select data-opt="bg">
+						<option value="auto">Auto (suits the property type)</option>
+						<option value="white">Pure white</option>
+						<option value="offwhite">Off-white (warm)</option>
+						<option value="tinted">Light tinted</option>
+						<option value="dark">Dark / moody</option>
+					</select>
+				</label>
+				<label class="switch"><input type="checkbox" role="switch" data-opt="photo" checked> Check photo overlays and the Book now button</label>
+				<div class="field">Property photos or logo <span class="sub">(optional: their colours join the website's)</span>
+					<input type="file" id="images" accept="image/*" multiple>
+					<span class="sub" id="images-status"></span>
+				</div>
+				<label class="field">How much should the photos count?
+					<select data-opt="imgWeight">
+						<option value="low">A little</option>
+						<option value="medium" selected>Some</option>
+						<option value="high">A lot</option>
+					</select>
+				</label>
+			</fieldset>
+			<fieldset>
+				<legend>Web</legend>
+				<label class="field">Text contrast
+					<select data-opt="text">
+						<option value="aa">Standard (WCAG AA, 4.5:1)</option>
+						<option value="aaa">Higher (WCAG AAA, 7:1): easier for older guests</option>
+					</select>
+				</label>
+				<label class="field">Dark mode in the code
+					<select data-opt="dark">
+						<option value="manual">Manual switch on the site</option>
+						<option value="auto">Follow the visitor's device</option>
+						<option value="both">Follow the device, with a switch to override</option>
+					</select>
+				</label>
+				<label class="switch"><input type="checkbox" role="switch" data-opt="states" checked> Hover, pressed, disabled and focus colours</label>
+				<label class="switch" id="render-switch"><input type="checkbox" role="switch" data-opt="render" checked> Rank colours by how much of the page they cover <span class="sub">(opens the page in Edge or Chrome; off: ranks by how often the code uses them)</span></label>
+			</fieldset>
+			<fieldset>
+				<legend>Exports</legend>
+				<label class="switch"><input type="checkbox" role="switch" data-opt="pebble" checked> Pebble theme (_variables.scss)</label>
+				<label class="switch"><input type="checkbox" role="switch" data-opt="email" checked> Email colours</label>
+				<label class="switch"><input type="checkbox" role="switch" data-opt="booking" checked> Booking engine colours</label>
+				<label class="switch"><input type="checkbox" role="switch" data-opt="print"> Print and signage (approximate CMYK)</label>
+			</fieldset>
+		</div>
+	</details>
+	<p id="status" class="status" role="status" aria-live="polite"></p>
+
+	<section id="choose" hidden>
+		<h2>Choose your colours</h2>
+		<p class="hint">The main brand colours on the site, the ones covering the most of the page first (images, black, white and greys are left out). Keep each one, or choose Change to generate a new colour that follows the colour rules (harmony, readability, colour-blind safety). Use Generate another for more, or pick from the list. Then build the full colour system.</p>
+		<div id="choose-cards" class="choose-cards"></div>
+		<div class="actions">
+			<button type="button" id="build">Build colour system</button>
+			<button type="button" class="secondary" id="reset-choices" hidden>Back to the site's colours</button>
+		</div>
+		<div id="similar-wrap" hidden>
+			<h3>Similar palettes</h3>
+			<p class="hint">Based on the colours chosen above. Using one fills in the choices; you can still keep or change each colour afterwards.</p>
+			<div id="similar" class="similar"></div>
+		</div>
+	</section>
+
+	<section id="results" hidden>
+		<nav aria-label="Sections">
+			<a href="#s-preview">Preview</a><a href="#s-hotel" data-show="hotel">For this hotel</a><a href="#s-photo" data-show="photo">Photos &amp; booking</a><a href="#s-palette">Palette</a><a href="#s-extended">Extended palette</a><a href="#s-roles">Roles</a>
+			<a href="#s-states" data-show="states">Buttons &amp; focus</a><a href="#s-dark">Dark mode</a><a href="#s-cvd">Colour blindness</a><a href="#s-shades">Shades</a><a href="#s-status">Status colours</a>
+			<a href="#s-gradients">Gradients</a><a href="#s-curated">Curated palettes</a><a href="#s-dev">Code &amp; exports</a>
+		</nav>
+		<p class="sub" id="method"></p>
+
+		<h2 id="s-preview">Preview</h2>
+		<p class="hint">How the scheme looks on a simple page. Change the settings above to compare.</p>
+		<div id="preview" class="preview"></div>
+
+		<div data-show="hotel">
+			<h2 id="s-hotel">For this hotel</h2>
+			<p class="hint" id="hotel-label"></p>
+			<p class="guidance" id="hotel-guidance"></p>
+			<ul id="hotel-notes" class="notes"></ul>
+		</div>
+
+		<div data-show="photo">
+			<h2 id="s-photo">Photos &amp; the Book now button</h2>
+			<p class="hint">Hotel pages put text and the booking button on top of photos. This finds the lightest overlay that keeps white text readable on any photo, and checks the booking button stands out.</p>
+			<div class="photo-demo" id="photo-demo"></div>
+			<table>
+				<thead><tr><th>Check</th><th>Result</th><th>Details</th></tr></thead>
+				<tbody id="photo-checks"></tbody>
+			</table>
+		</div>
+
+		<h2 id="s-palette">Your palette</h2>
+		<p class="hint">Click a colour to copy its code. <span id="mood"></span></p>
+		<ul id="notes" class="notes"></ul>
+		<div id="palette" class="palette"></div>
+
+		<h2 id="s-extended">Extended palette</h2>
+		<p class="hint" id="ext-strategy"></p>
+		<div id="extended"></div>
+		<h3>Harmony check</h3>
+		<div id="dots" class="dots"></div>
+
+		<h2 id="s-roles">Colour roles</h2>
+		<p class="hint">Which colour to use for what, on the <span id="bg-label"></span> background.</p>
+		<table>
+			<thead><tr><th>Role</th><th>Colour</th><th>Use for</th></tr></thead>
+			<tbody id="roles"></tbody>
+		</table>
+		<h3>Contrast checks</h3>
+		<p class="hint">Text needs 4.5:1 (WCAG 2.2 SC 1.4.3). Buttons and other interactive parts need 3:1 to stand out (SC 1.4.11). 4.49:1 is a fail.</p>
+		<table>
+			<thead><tr><th>Check</th><th>Ratio</th><th>Needs</th><th>Result</th></tr></thead>
+			<tbody id="checks"></tbody>
+		</table>
+
+		<div data-show="states">
+			<h2 id="s-states">Buttons &amp; focus</h2>
+			<p class="hint">Every button needs a hover, pressed and disabled look, and keyboard users need a visible focus ring (3:1 against the background, WCAG 2.2 SC 2.4.13).</p>
+			<div id="states-demo" class="states-demo"></div>
+			<table>
+				<thead><tr><th>Check</th><th>Ratio</th><th>Needs</th><th>Result</th></tr></thead>
+				<tbody id="state-checks"></tbody>
+			</table>
+		</div>
+
+		<h2 id="s-dark">Dark mode</h2>
+		<p class="hint">Dark mode remaps the roles rather than inverting colours. Surfaces get lighter as they rise, and brand colours get lighter and slightly calmer so they don't glow.</p>
+		<div id="dark-preview" class="preview"></div>
+		<h3>Dark mode contrast checks</h3>
+		<table>
+			<thead><tr><th>Check</th><th>Ratio</th><th>Needs</th><th>Result</th></tr></thead>
+			<tbody id="dark-checks"></tbody>
+		</table>
+
+		<h2 id="s-cvd">Colour blindness check</h2>
+		<p class="hint">How the main and status colours look to people with each type of colour blindness. Where two colours merge, add a second cue such as an icon, label or underline.</p>
+		<div id="cvd" class="cvd"></div>
+		<h3>Colour-blind-safe chart colours (Okabe-Ito)</h3>
+		<p class="hint">For charts, maps and graphs where colour carries the data. These stay distinct for most kinds of colour blindness.</p>
+		<div id="okabe" class="dots"></div>
+
+		<h2 id="s-shades">Shades</h2>
+		<p class="hint">Lighter and darker versions on an even lightness scale. Hover a shade to see what it's for; the outlined one is closest to the colour itself.</p>
+		<div id="shades"></div>
+
+		<h2 id="s-status">Status colours</h2>
+		<p class="hint">For success, warning, error and info messages: 50 for backgrounds, 500 for icons, 700 for text, 400 in dark mode.</p>
+		<div id="semantic" class="semantic"></div>
+
+		<h2 id="s-gradients">Gradients</h2>
+		<p class="hint">Blended in OKLCH so the middle doesn't go grey.</p>
+		<div id="gradients" class="grads"></div>
+
+		<h2 id="s-curated">Curated palettes in a similar mood</h2>
+		<p class="hint">Ready-made palettes for inspiration. <span id="mood2"></span></p>
+		<div id="curated" class="curated"></div>
+
+		<h2 id="s-dev">Code &amp; exports</h2>
+		<p class="hint">CSS tokens in three layers (raw colours, then roles for light and dark, then components), Tailwind, and the exports switched on in Settings.</p>
+		<div class="tabs" role="tablist">
+			<button class="secondary" type="button" role="tab" data-tab="css" aria-selected="true">CSS tokens</button>
+			<button class="secondary" type="button" role="tab" data-tab="tailwind4" aria-selected="false">Tailwind v4</button>
+			<button class="secondary" type="button" role="tab" data-tab="tailwind3" aria-selected="false">Tailwind v3</button>
+			<button class="secondary" type="button" role="tab" data-tab="pebble" aria-selected="false">Pebble theme</button>
+			<button class="secondary" type="button" role="tab" data-tab="email" aria-selected="false">Email</button>
+			<button class="secondary" type="button" role="tab" data-tab="booking" aria-selected="false">Booking engine</button>
+			<button class="secondary" type="button" role="tab" data-tab="print" aria-selected="false">Print</button>
+		</div>
+		<pre id="code"></pre>
+		<div class="actions">
+			<button class="secondary" type="button" id="copy-code">Copy this code</button>
+			<button class="secondary" type="button" id="dl-sheet">Download swatch sheet (HTML)</button>
+			<button class="secondary" type="button" id="dl-palette">Download colour system (JSON)</button>
+			<button class="secondary" type="button" id="dl-colours">Download all colours (JSON)</button>
+		</div>
+
+		<h2>All colours found on the site</h2>
+		<p class="hint" id="all-hint"></p>
+		<div id="all" class="all"></div>
+	</section>
+	<p class="credit">
+		Palette rules based on the <a href="https://github.com/meodai/skill.color-expert" target="_blank" rel="noopener">color-expert skill</a> by David Aerne (CC BY 4.0),
+		the <a href="https://github.com/davepoon/buildwithclaude/tree/main/plugins/frontend-design-pro/skills/color-curator" target="_blank" rel="noopener">color-curator skill</a> by Dave Poon (MIT),
+		and these MCP Market skills: <a href="https://github.com/arnavpuri/designskills" target="_blank" rel="noopener">Color Palette Architect</a> by Arnav Puri (MIT),
+		<a href="https://github.com/alpacalabsllc/skills-for-architects" target="_blank" rel="noopener">AI Color Palette Designer</a> by Alpaca Labs (MIT),
+		<a href="https://github.com/svengraziani/ui-design" target="_blank" rel="noopener">UI Color Palettes</a> by Sven Graziani (usage guidelines only),
+		and <a href="https://mcpmarket.com/tools/skills/color-theory-design-systems" target="_blank" rel="noopener">Color Theory &amp; OKLCH</a> by Marvin Richter.
+	</p>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let data = null;
+let tab = 'css';
+
+const luminance = (hex) => [1, 3, 5].map((i) => {
+	const v = parseInt(hex.slice(i, i + 2), 16) / 255;
+	return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+}).reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
+const ratio = (a, b) => { const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+
+// Black or white text for a background.
+const textFor = (hex) => (luminance(hex) > 0.179 ? '#000' : '#fff');
+// A colour used as text on a card: falls back to black/white if it would be under 3:1.
+const readableOn = (fg, bg) => (ratio(fg, bg) >= 3 ? fg : textFor(bg));
+
+function swatch(hex, label, title) {
+	const b = document.createElement('button');
+	b.type = 'button';
+	b.className = 'swatch';
+	b.style.background = hex;
+	b.style.color = textFor(hex);
+	b.innerHTML = label;
+	if (title) b.title = title;
+	b.setAttribute('aria-label', `Copy ${hex}${title ? `, ${title}` : ''}`);
+	b.addEventListener('click', () => copy(hex, `Copied ${hex}`));
+	return b;
+}
+
+async function copy(text, message) {
+	await navigator.clipboard.writeText(text);
+	setStatus(message);
+}
+
+function setStatus(text, isError = false) {
+	$('status').textContent = text;
+	$('status').className = 'status' + (isError ? ' error' : '');
+}
+
+function download(content, name, type) {
+	const a = document.createElement('a');
+	a.href = URL.createObjectURL(new Blob([content], { type }));
+	a.download = name;
+	a.click();
+	URL.revokeObjectURL(a.href);
+}
+
+// How much of a colour there is: page coverage when measured, otherwise how often the code uses it.
+const amount = (c) => (c.coverage != null
+	? `covers ${c.coverage >= 0.001 ? `${(c.coverage * 100).toFixed(c.coverage < 0.1 ? 1 : 0)}%` : 'under 0.1%'} of the page`
+	: `used ${c.count}× in the code`);
+
+// APCA Lc guide levels.
+const readability = (lc) => (lc >= 90 ? 'ideal for body text' : lc >= 75 ? 'good for body text' : lc >= 60 ? 'large text' : lc >= 45 ? 'headlines only' : 'not for text');
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const chip = (hex) => `<span class="chip" style="background:${hex}"></span>`;
+const checkRows = (checks) => checks.map((c) => `<tr><td>${c.label}</td><td>${c.ratio}:1</td><td>${c.min}:1</td><td class="${c.pass ? 'pass' : 'fail'}">${c.pass ? 'Pass' : 'Fail'}</td></tr>`).join('');
+
+function previewHtml(t) {
+	return `<div class="site" style="background:${t.background};color:${t.text2}">
+		<h3 style="color:${t.text}">Welcome to your website</h3>
+		<p>This is body text in the secondary text colour. Here is <a href="#" style="color:${t.link}" onclick="return false">a text link</a>, underlined so it doesn't rely on colour alone.</p>
+		<p style="color:${t.muted};font-size:14px">A caption in the muted text colour.</p>
+		<div class="btns">
+			<span class="btn" style="background:${t.primary};color:${t.onPrimary}">Primary button</span>
+			<span class="btn" style="background:${t.accent};color:${t.onAccent}">Book now</span>
+		</div>
+		<div class="alert" style="background:${t.alertBg};color:${t.alertText};border-color:${t.alertBorder}">⚠ Error message: shown with an icon and words, not colour alone.</div>
+		<div class="cards">
+			${['Rooms', 'Location'].map((name) => `<div class="tile" style="background:${t.surface};border-color:${t.border}">
+				<h4 style="color:${t.text}">${name}</h4>
+				<p style="margin:0">A card on the surface colour, with a border.</p>
+				<p style="margin:8px 0 0;color:${readableOn(t.secondary, t.surface)};font-weight:600">Secondary colour detail</p>
+			</div>`).join('')}
+		</div>
+	</div>`;
+}
+
+// Code tabs: the system's CSS/Tailwind, plus the exports switched on in Settings.
+const codeFor = (name) => data.system[name] ?? data.exports?.[name] ?? null;
+
+function showCode() {
+	document.querySelectorAll('.tabs button').forEach((b) => { b.hidden = !codeFor(b.dataset.tab); });
+	if (!codeFor(tab)) tab = 'css';
+	document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
+	$('code').textContent = codeFor(tab);
+}
+
+function render({ colours, palette, design, system: s, hotel, options }) {
+	const r = Object.fromEntries(design.roles.map((x) => [x.key, x.hex]));
+	const p = (role) => design.palette.find((c) => c.role === role);
+	const sem = (name, step) => s.semantic[name].steps.find((x) => x.step === step).hex;
+	const shown = { hotel: !!hotel, photo: !!s.photo, states: !!s.light['focus-ring'] };
+	document.querySelectorAll('[data-show]').forEach((el) => { el.hidden = !shown[el.dataset.show]; });
+	$('method').textContent = `${colours.warning ? `${colours.warning} ` : ''}${colours.method === 'rendered' ? 'Colours ranked by how much of the page they cover (images left out)' : 'Colours ranked by how often the site\'s code uses them'}${colours.imageColours ? `, plus ${colours.imageColours} colours from your photos or logo` : ''}. Background: ${design.backgroundLabel}${options.bg === 'auto' ? ' (auto)' : ''}. Text contrast: ${design.textTarget}:1.`;
+
+	if (hotel) {
+		$('hotel-label').textContent = hotel.label;
+		$('hotel-guidance').textContent = hotel.guidance;
+		$('hotel-notes').innerHTML = hotel.notes.map((n) => `<li>${esc(n)}</li>`).join('');
+	}
+	if (s.photo) {
+		const t = s.photo.tokens;
+		const book = `<span class="btn" style="background:${r.accent};color:${p('accent').textColour}">Book now</span>`;
+		// Worst cases: a very light photo and a very dark one, each under the overlay.
+		$('photo-demo').innerHTML = [['#f2efe9', 'A light photo (sand, sky, white walls)'], ['#1d2a33', 'A dark photo (night, shade)']]
+			.map(([photoBg, label]) => `<div class="shot" style="background:${photoBg};--scrim:${t['overlay-scrim']}"><h4>${label}</h4>${book}</div>`).join('');
+		$('photo-checks').innerHTML = s.photo.checks.map((c) => `<tr><td>${c.label}</td><td class="${c.pass ? 'pass' : 'fail'}">${c.pass ? 'Pass' : 'Fail'}</td><td>${c.ratio !== undefined ? `${c.ratio}:1 (needs ${c.min}:1)` : esc(c.detail)}</td></tr>`).join('')
+			+ `<tr><td>Overlay to use</td><td></td><td><code>${t['overlay-scrim']}</code> black, or <code>${t['overlay-scrim-brand']}</code> in the brand's darkest shade</td></tr>`;
+	}
+	if (s.light['focus-ring']) {
+		const L = s.light;
+		const btn = (label, sub, bg, fg, extra = '') => `<span style="background:${bg};color:${fg};${extra}">${label}<small>${sub}</small></span>`;
+		$('states-demo').style.background = L['bg-primary'];
+		$('states-demo').innerHTML = [
+			btn('Primary', 'normal', L['interactive-primary'], L['on-interactive-primary']),
+			btn('Primary', 'hover', L['interactive-primary-hover'], L['on-interactive-primary']),
+			btn('Primary', 'pressed', L['interactive-primary-active'], L['on-interactive-primary']),
+			btn('Book now', 'normal', L['interactive-accent'], L['on-interactive-accent']),
+			btn('Book now', 'hover', L['interactive-accent-hover'], L['on-interactive-accent']),
+			btn('Book now', 'keyboard focus', L['interactive-accent'], L['on-interactive-accent'], `outline:3px solid ${L['focus-ring']};outline-offset:2px`),
+			btn('Unavailable', 'disabled', L['disabled-bg'], L['disabled-text']),
+		].join('');
+		$('state-checks').innerHTML = checkRows(s.stateChecks);
+	}
+	$('preview').innerHTML = previewHtml({
+		background: r.background, text: r['text-primary'], text2: r['text-secondary'], muted: r['text-muted'], link: r.link,
+		primary: r.primary, onPrimary: p('primary').textColour, accent: r.accent, onAccent: p('accent').textColour,
+		surface: r.surface, border: r.border, secondary: r.secondary,
+		alertBg: sem('error', 50), alertText: sem('error', 700), alertBorder: sem('error', 500),
+	});
+	const d = s.dark;
+	$('dark-preview').innerHTML = previewHtml({
+		background: d['bg-primary'], text: d['text-primary'], text2: d['text-secondary'], muted: d['text-tertiary'], link: d.link,
+		primary: d['interactive-primary'], onPrimary: d['on-interactive-primary'], accent: d['interactive-accent'], onAccent: d['on-interactive-accent'],
+		surface: d['surface-2'], border: d['border-default'], secondary: s.scales.secondary.steps.find((x) => x.step === 400).hex,
+		alertBg: d['surface-1'], alertText: d['color-error'], alertBorder: d['color-error'],
+	});
+	$('dark-checks').innerHTML = checkRows(s.darkChecks);
+
+	$('mood').textContent = `Closest mood: ${design.mood}.`;
+	$('mood2').textContent = `Closest curated mood: ${design.mood}.`;
+	$('notes').innerHTML = [...palette.notes, ...(hotel?.notes ?? []), ...design.notes, ...s.notes].map((n) => `<li>${esc(n)}</li>`).join('');
+
+	// Brand colours only: the dark and light neutrals still drive text and backgrounds, but aren't palette picks.
+	$('palette').replaceChildren(...[...design.palette.filter((c) => c.role !== 'dark' && c.role !== 'light'), ...(design.extras ?? [])].map((c) => {
+		const card = document.createElement('div');
+		card.className = 'card';
+		card.append(swatch(c.hex, c.hex.toUpperCase()));
+		// Which site colour this came from in the choose step, and whether it was changed there.
+		const from = candidatesData?.candidates.find((cd) => (chosen(cd)?.hex ?? cd.hex) === c.hex);
+		const swapped = from && chosen(from);
+		if (swapped) c = { ...c, original: from.hex, changes: [`You changed it: ${swapped.label}. ${swapped.reason}`] };
+		const changed = c.original && c.original !== c.hex;
+		const best = Math.max(c.wcag.white, c.wcag.darkText);
+		const psych = design.psychology.find((x) => x.role === c.role);
+		const body = document.createElement('div');
+		body.className = 'body';
+		body.innerHTML = `<p class="role">${c.role}</p>`
+			+ `<p class="meta">${c.character} ${psych ? psych.name : c.name}${c.harmony && c.role !== 'primary' ? `, ${c.harmony} to primary` : ''}</p>`
+			+ (changed ? `<p class="was">${chip(c.original)} Was ${c.original.toUpperCase()}</p>` : '')
+			+ (!c.original || from?.source === 'suggested' ? '<p class="was">New colour</p>' : '')
+			+ `<p class="meta">Use with <strong>${c.useWith}</strong></p>`
+			+ `<p class="meta" title="WCAG contrast ratio and APCA lightness contrast of that text on this colour">${best.toFixed(1)}:1 · APCA Lc ${c.apca} (${readability(c.apca)})</p>`
+			+ (psych ? `<p class="feel"><strong>Feels:</strong> ${esc(psych.feel)}<br><strong>Suits:</strong> ${esc(psych.bestFor)}<br>${esc(psych.temperature)}</p>` : '')
+			+ `<p class="meta usage">${esc(c.usage)}</p>`
+			+ (c.changes.length ? `<ul>${c.changes.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : '<p class="ok">Kept as it is.</p>');
+		card.append(body);
+		return card;
+	}));
+
+	$('ext-strategy').textContent = `${s.extended.name}: ${s.extended.strategy}`;
+	$('extended').replaceChildren(...s.extended.groups.map((g) => {
+		const wrap = Object.assign(document.createElement('div'), { className: 'ext-group' });
+		wrap.innerHTML = `<h3>${g.group}</h3>`;
+		const grid = Object.assign(document.createElement('div'), { className: 'ext' });
+		grid.append(...g.colours.map((c) => {
+			const card = Object.assign(document.createElement('div'), { className: 'card' });
+			const sw = swatch(c.hex, esc(c.name));
+			sw.style.color = c.textColour;
+			sw.style.height = '96px';
+			card.append(sw);
+			card.insertAdjacentHTML('beforeend', `<dl><dt>HEX</dt><dd>${c.hex.toUpperCase()}</dd><dt>RGB</dt><dd>${c.rgb}</dd><dt>HSL</dt><dd>${c.hsl}</dd><dt>Use</dt><dd>${esc(c.use)}</dd></dl>`);
+			return card;
+		}));
+		wrap.append(grid);
+		return wrap;
+	}));
+	$('dots').innerHTML = s.extended.groups.flatMap((g) => g.colours).map((c) => `<div class="dot" style="background:${c.hex}" title="${esc(c.name)} ${c.hex}"></div>`).join('');
+
+	$('bg-label').textContent = design.backgroundLabel.toLowerCase();
+	$('roles').innerHTML = design.roles.map((x) => `<tr><td>${x.role}</td><td>${chip(x.hex)} <code>${x.hex}</code></td><td>${esc(x.usage)}</td></tr>`).join('');
+	$('checks').innerHTML = checkRows(design.checks);
+
+	$('cvd').innerHTML = s.cvd.map((c) => `<div>
+		<p class="scale-label" style="text-transform:none">${c.label} <span style="font-weight:400;color:#5c5c60">· ${c.share}</span></p>
+		<div class="row">${Object.entries(c.swatches).map(([role, hex]) => `<div style="background:${hex};color:${textFor(hex)}">${role}</div>`).join('')}</div>
+		<p class="meta" style="margin-top:6px">${c.confused.length ? `<span class="fail">Hard to tell apart:</span> ${c.confused.map((x) => x.join(' and ')).join('; ')}` : '<span class="pass">All distinct</span>'}</p>
+	</div>`).join('');
+	$('okabe').innerHTML = s.okabeIto.map(([name, hex]) => `<div class="dot" style="background:${hex}" title="${name} ${hex}"></div>`).join('');
+
+	$('shades').replaceChildren(...['brand', 'secondary', 'accent', 'gray'].flatMap((name) => {
+		const scale = s.scales[name];
+		const label = Object.assign(document.createElement('p'), { className: 'scale-label', textContent: name === 'brand' ? 'primary' : name === 'gray' ? 'neutral grey (tinted with the primary)' : name });
+		const row = Object.assign(document.createElement('div'), { className: 'scale' });
+		row.append(...scale.steps.map((x) => {
+			const b = swatch(x.hex, `${x.step}<br>${x.hex.toUpperCase()}`, x.use);
+			if (x.step === scale.nearest) b.classList.add('base');
+			return b;
+		}));
+		return [label, row];
+	}));
+
+	$('semantic').replaceChildren(...Object.entries(s.semantic).map(([name, v]) => {
+		const card = Object.assign(document.createElement('div'), { className: 'card' });
+		const row = Object.assign(document.createElement('div'), { className: 'row' });
+		row.append(...v.steps.map((x) => swatch(x.hex, String(x.step), x.use)));
+		card.append(row);
+		card.insertAdjacentHTML('beforeend', `<div class="body"><p class="role">${name}</p></div>`);
+		return card;
+	}));
+
+	$('gradients').innerHTML = s.gradients.map((g) => `<div class="card"><div class="fill" style="background:${g.css}"></div>
+		<div class="body"><p class="role">${g.name}</p><p class="meta">${esc(g.note)}</p><p class="meta"><code style="font-size:11px;word-break:break-all">${esc(g.css)}</code></p></div></div>`).join('');
+
+	$('curated').innerHTML = design.curated.map((c) => `<div class="card">
+		<div class="mini">${Object.values(c.colours).map((hex) => `<div style="background:${hex}" title="${hex}"></div>`).join('')}</div>
+		<div class="body"><p class="role">${esc(c.name)}</p><p class="meta">${esc(c.mood)}</p>
+		<p class="meta">${Object.entries(c.colours).map(([k, hex]) => `${chip(hex)} <code>${hex}</code> ${k === 'extra' ? '' : k}`).join('<br>')}</p></div>
+	</div>`).join('');
+
+	showCode();
+
+	$('all-hint').textContent = `${colours.totalColours} colours, most used first. ${colours.imageColours ? 'Website images are left out; your uploaded photos or logo are included.' : 'Images are left out.'}`;
+	$('all').replaceChildren(...colours.colours.map((c) => swatch(c.hex, `${c.hex.toUpperCase()}<small>${amount(c)}</small>`)));
+	$('results').hidden = false;
+}
+
+// Settings: every [data-opt] control becomes a query parameter, and is remembered on this computer.
+// v2 key: coverage ranking is now on by default, and older saved settings had it off.
+const settingsKey = 'colour-palette-v4-settings-2';
+const controls = () => [...document.querySelectorAll('[data-opt]')];
+const settingValue = (el) => (el.type === 'checkbox' ? (el.checked ? '1' : '0') : el.value);
+let imageColours = '';
+
+function settingsQuery() {
+	const q = new URLSearchParams(controls().map((el) => [el.dataset.opt, settingValue(el)]));
+	if (imageColours) q.set('img', imageColours);
+	return q.toString();
+}
+
+function saveSettings() {
+	localStorage.setItem(settingsKey, JSON.stringify(Object.fromEntries(controls().map((el) => [el.dataset.opt, settingValue(el)]))));
+}
+
+function restoreSettings() {
+	const saved = JSON.parse(localStorage.getItem(settingsKey) || '{}');
+	for (const el of controls()) {
+		if (!(el.dataset.opt in saved)) continue;
+		if (el.type === 'checkbox') el.checked = saved[el.dataset.opt] === '1';
+		else if ([...el.options].some((o) => o.value === saved[el.dataset.opt])) el.value = saved[el.dataset.opt];
+	}
+}
+
+// Reads uploaded photos/logos in the browser: shrinks each to 96px, groups similar pixels,
+// and keeps the 12 biggest groups across all images as "#rrggbb:share".
+async function readImages(files) {
+	const buckets = new Map();
+	let total = 0;
+	for (const file of files) {
+		const bitmap = await createImageBitmap(file);
+		const scale = Math.min(1, 96 / Math.max(bitmap.width, bitmap.height));
+		const canvas = Object.assign(document.createElement('canvas'), { width: Math.max(1, Math.round(bitmap.width * scale)), height: Math.max(1, Math.round(bitmap.height * scale)) });
+		const ctx = canvas.getContext('2d');
+		ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+		const px = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+		for (let i = 0; i < px.length; i += 4) {
+			if (px[i + 3] < 128) continue; // transparent parts of a logo
+			const key = (px[i] >> 4) << 8 | (px[i + 1] >> 4) << 4 | (px[i + 2] >> 4);
+			const b = buckets.get(key) || { n: 0, r: 0, g: 0, b: 0 };
+			b.n++; b.r += px[i]; b.g += px[i + 1]; b.b += px[i + 2];
+			buckets.set(key, b);
+			total++;
+		}
+	}
+	const hex = (v) => Math.round(v).toString(16).padStart(2, '0');
+	return [...buckets.values()].sort((a, b) => b.n - a.n).slice(0, 12)
+		.map((b) => `#${hex(b.r / b.n)}${hex(b.g / b.n)}${hex(b.b / b.n)}:${(b.n / total).toFixed(4)}`).join(',');
+}
+
+async function api(path, extra = '') {
+	const res = await fetch(`/api/${path}?url=${encodeURIComponent($('url').value.trim())}&${settingsQuery()}${extra}`);
+	const json = await res.json();
+	if (!res.ok) throw new Error(json.error);
+	return json;
+}
+
+// Step 1: the site's brand colours, each kept or changed. Choices are remembered by the site colour,
+// so changing a setting (which refreshes the recommendations) doesn't lose them.
+let candidatesData = null;
+const choices = new Map(); // site colour -> { mode: 'keep' | 'change', pick }
+const roleLabel = { primary: 'Primary', secondary: 'Secondary', accent: 'Accent', extra: 'Extra' };
+
+async function loadColours(fresh) {
+	if (!$('url').value.trim()) return;
+	$('go').disabled = true;
+	setStatus(fresh ? 'Reading the website… this can take up to a minute.' : 'Updating…');
+	try {
+		if (fresh) { choices.clear(); data = null; $('results').hidden = true; }
+		candidatesData = await api('colours', fresh ? '&fresh=1' : '');
+		renderChoices();
+		const how = candidatesData.colours.method === 'rendered' ? 'ranked by how much of the page they cover' : 'ranked by how often the code uses them';
+		if (data) await build(); else setStatus([candidatesData.colours.warning, `Found ${candidatesData.candidates.length} brand colours on ${candidatesData.colours.url}, ${how}. Keep or change each, then build the colour system.`, candidatesData.note].filter(Boolean).join(' '));
+	} catch (err) {
+		setStatus(err.message || 'Something went wrong. Is the Colour Palette window still open?', true);
+	} finally {
+		$('go').disabled = false;
+	}
+}
+
+// A colour's change options: its recommendations, plus one set by "Use this palette" if that isn't among them.
+// A colour's change options: generated ones (newest first), one set by "Use this palette", then the recommendations.
+function optionsFor(c) {
+	const choice = choices.get(c.hex) ?? {};
+	const all = [...(choice.generated ?? []), ...(choice.custom ? [choice.custom] : []), ...c.recommendations];
+	return all.filter((o, k) => all.findIndex((x) => x.hex === o.hex) === k);
+}
+
+// Asks the server for a new colour for card i that follows the skills' rules, different from any shown before.
+async function generate(c, i) {
+	const picks = candidatesData.candidates.map((x) => chosen(x)?.hex ?? x.hex);
+	const before = choices.get(c.hex) ?? {};
+	const exclude = [c.hex, ...(before.generated ?? []).map((g) => g.hex)];
+	setStatus('Generating a colour…');
+	try {
+		const res = await fetch(`/api/generate?picks=${encodeURIComponent(picks.join(','))}&index=${i}&exclude=${encodeURIComponent(exclude.join(','))}&${settingsQuery()}`);
+		const { colour, error } = await res.json();
+		if (!res.ok) throw new Error(error);
+		if (!colour) {
+			choices.set(c.hex, { ...before, mode: before.generated?.length || c.recommendations.length ? 'change' : 'keep' });
+			setStatus('No other colour fits all the rules for this spot. Pick one from the list, or keep the original.');
+		} else {
+			choices.set(c.hex, { ...before, mode: 'change', pick: colour.hex, generated: [colour, ...(before.generated ?? [])] });
+			setStatus(`Generated ${colour.name} (${colour.hex.toUpperCase()}) for the ${roleLabel[c.role].toLowerCase()} colour.`);
+		}
+	} catch (err) {
+		setStatus(err.message || 'Something went wrong. Is the Colour Palette window still open?', true);
+	}
+	renderChoices();
+	(document.querySelector(`#regen-${i}`) ?? document.querySelector(`input[name="mode-${i}"]:checked`))?.focus();
+}
+
+function chosen(c) {
+	const choice = choices.get(c.hex) ?? { mode: 'keep' };
+	const options = optionsFor(c);
+	if (choice.mode === 'change' && options.length) return options.find((r) => r.hex === choice.pick) ?? options[0];
+	return null;
+}
+
+const optionHtml = (r, current) => `<button type="button" class="picker-opt" data-hex="${r.hex}" aria-pressed="${r.hex === current}">
+	<span class="picker-chip" style="background:${r.hex}"></span><span class="picker-text">${esc(r.label)}<small>${r.hex.toUpperCase()}</small></span></button>`;
+
+function closePickers(except) {
+	document.querySelectorAll('.picker-btn[aria-expanded="true"]').forEach((b) => {
+		if (b === except) return;
+		b.setAttribute('aria-expanded', 'false');
+		$(b.getAttribute('aria-controls')).hidden = true;
+	});
+}
+
+function renderChoices() {
+	$('choose').hidden = false;
+	$('choose-cards').replaceChildren(...candidatesData.candidates.map((c, i) => {
+		const change = chosen(c);
+		const options = optionsFor(c);
+		const shown = change ? change.hex : c.hex;
+		const card = Object.assign(document.createElement('div'), { className: 'card choose-card' });
+		card.innerHTML = `
+			<div class="swatch" style="background:${shown};color:${textFor(shown)}"><span>${roleLabel[c.role]}</span><span>${shown.toUpperCase()}<br><small>${esc(change?.name ?? c.name)}</small></span></div>
+			<div class="body">
+				<p class="meta">${c.source === 'site' ? `Found on the site · ${amount(c)}` : c.source === 'image' ? 'From your photos or logo' : 'Suggested: to make up 3 colours'}</p>
+				${change ? `<p class="was-chip">${chip(c.hex)} Was ${c.hex.toUpperCase()}</p>` : ''}
+				${c.suggestChange && !change ? `<p class="tip">We'd suggest a change: see the recommended option.</p>` : ''}
+				<fieldset>
+					<legend>Keep or change ${c.hex}</legend>
+					<label class="toggle"><input type="radio" name="mode-${i}" value="keep" ${change ? '' : 'checked'}><span>Keep</span></label>
+					<label class="toggle"><input type="radio" name="mode-${i}" value="change" ${change ? 'checked' : ''}><span>Change</span></label>
+				</fieldset>
+				<div class="change" ${change ? '' : 'hidden'}>
+					<span class="sub" id="rec-label-${i}">Generated and recommended colours</span>
+					<div class="picker">
+						<button type="button" class="picker-btn" id="rec-${i}" aria-expanded="false" aria-controls="rec-list-${i}" aria-labelledby="rec-label-${i} rec-${i}">
+							<span class="picker-chip" style="background:${change?.hex ?? c.hex}"></span>
+							<span class="picker-text">${esc(change?.label ?? '')}<small>${(change?.hex ?? '').toUpperCase()}</small></span>
+							<span class="picker-caret" aria-hidden="true">▾</span>
+						</button>
+						<div class="picker-list" id="rec-list-${i}" hidden>${options.map((r) => optionHtml(r, change?.hex)).join('')}</div>
+					</div>
+					<p class="reason">${change ? esc(change.reason) : ''}</p>
+					<button type="button" class="secondary regen" id="regen-${i}">↻ Generate another</button>
+				</div>
+			</div>`;
+		// Change generates a new colour straight away; Keep goes back to the site's colour.
+		card.querySelectorAll(`input[name="mode-${i}"]`).forEach((radio) => radio.addEventListener('change', () => {
+			if (radio.value === 'change') return generate(c, i);
+			choices.set(c.hex, { ...choices.get(c.hex), mode: 'keep' });
+			renderChoices();
+			document.querySelector(`input[name="mode-${i}"][value="keep"]`).focus();
+		}));
+		card.querySelector('.regen').addEventListener('click', () => generate(c, i));
+
+		// The colour picker: a button that opens a list of swatches. Arrow keys move, Enter picks, Escape closes.
+		const btn = card.querySelector('.picker-btn'), list = card.querySelector('.picker-list');
+		const items = () => [...list.querySelectorAll('.picker-opt')];
+		btn.addEventListener('click', () => {
+			const open = btn.getAttribute('aria-expanded') !== 'true';
+			closePickers(btn);
+			btn.setAttribute('aria-expanded', String(open));
+			list.hidden = !open;
+			if (open) (items().find((o) => o.getAttribute('aria-pressed') === 'true') ?? items()[0]).focus();
+		});
+		btn.addEventListener('keydown', (e) => { if (e.key === 'ArrowDown') { e.preventDefault(); btn.click(); } });
+		list.addEventListener('keydown', (e) => {
+			const all = items(), at = all.indexOf(document.activeElement);
+			if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); all[(at + (e.key === 'ArrowDown' ? 1 : all.length - 1)) % all.length].focus(); }
+			if (e.key === 'Escape') { closePickers(); btn.focus(); }
+		});
+		list.addEventListener('focusout', (e) => { if (!card.querySelector('.picker').contains(e.relatedTarget)) closePickers(); });
+		for (const opt of items()) {
+			opt.addEventListener('click', () => {
+				choices.set(c.hex, { ...choices.get(c.hex), mode: 'change', pick: opt.dataset.hex });
+				renderChoices();
+				$(`rec-${i}`).focus();
+			});
+		}
+		return card;
+	}));
+	$('build').textContent = data ? 'Rebuild with these colours' : 'Build colour system';
+	$('reset-choices').hidden = ![...choices.values()].some((ch) => ch.mode === 'change');
+	loadSimilar();
+}
+
+// Similar palettes, based on the colours currently chosen above.
+let similarRequest = 0;
+async function loadSimilar() {
+	const id = ++similarRequest;
+	const picks = candidatesData.candidates.map((c) => chosen(c)?.hex ?? c.hex);
+	const res = await fetch(`/api/similar?picks=${encodeURIComponent(picks.join(','))}&${settingsQuery()}`);
+	const { palettes } = await res.json();
+	if (id !== similarRequest) return; // a newer choice has been made since
+	$('similar').replaceChildren(...palettes.map((pal) => {
+		const card = Object.assign(document.createElement('div'), { className: 'card similar-card' });
+		card.innerHTML = `
+			<div class="similar-strip">${pal.colours.map((hex, i) => `<div style="background:${hex};color:${textFor(hex)}" title="${esc(pal.names[i])} ${hex}"><span>${roleLabel[candidatesData.candidates[i].role]}</span><span>${hex.toUpperCase()}</span></div>`).join('')}</div>
+			<div class="body"><p class="role">${esc(pal.name)}</p><p class="meta">${esc(pal.note)}</p>
+			<button type="button" class="secondary">Use this palette</button></div>`;
+		card.querySelector('button').addEventListener('click', () => {
+			candidatesData.candidates.forEach((c, i) => {
+				const hex = pal.colours[i];
+				if (hex === c.hex) return choices.set(c.hex, { mode: 'keep' });
+				const known = c.recommendations.some((r) => r.hex === hex);
+				choices.set(c.hex, { mode: 'change', pick: hex, ...(known ? {} : { custom: { hex, name: pal.names[i], label: `From the ${pal.name} palette`, reason: pal.note } }) });
+			});
+			renderChoices();
+			setStatus(`Using the ${pal.name} palette. Fine-tune any colour above, then ${data ? 'rebuild' : 'build the colour system'}.`);
+			$('choose-cards').querySelector('.picker-btn, input')?.focus();
+		});
+		return card;
+	}));
+	$('similar-wrap').hidden = !palettes.length;
+}
+
+// Step 2: the full colour system from the chosen colours, exactly as picked.
+async function build() {
+	const picks = candidatesData.candidates.map((c) => chosen(c)?.hex ?? c.hex);
+	$('build').disabled = true;
+	setStatus('Building the colour system…');
+	try {
+		data = await api('palette', `&picks=${encodeURIComponent(picks.join(','))}`);
+		render(data);
+		$('build').textContent = 'Rebuild with these colours';
+		setStatus(`Done: ${data.colours.url}`);
+	} catch (err) {
+		setStatus(err.message || 'Something went wrong. Is the Colour Palette window still open?', true);
+	} finally {
+		$('build').disabled = false;
+	}
+}
+
+$('form').addEventListener('submit', (e) => { e.preventDefault(); loadColours(true); });
+$('reset-choices').addEventListener('click', () => { choices.clear(); renderChoices(); setStatus("Back to the site's own colours."); $('build').focus(); });
+document.addEventListener('click', (e) => { if (!e.target.closest('.picker')) closePickers(); });
+$('build').addEventListener('click', async () => { await build(); if (data) document.getElementById('results').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); });
+for (const el of controls()) el.addEventListener('change', () => { saveSettings(); if (candidatesData) loadColours(el.dataset.opt === 'render'); });
+$('images').addEventListener('change', async (e) => {
+	const files = [...e.target.files];
+	$('images-status').textContent = files.length ? 'Reading…' : '';
+	imageColours = files.length ? await readImages(files) : '';
+	$('images-status').textContent = files.length ? `${files.length} image${files.length > 1 ? 's' : ''} added.` : '';
+	if (candidatesData) loadColours(false);
+});
+document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => { tab = b.dataset.tab; showCode(); }));
+
+// Property types come from the server; public mode turns off reading the page in a browser.
+(async () => {
+	const config = await fetch('/api/config').then((res) => res.json());
+	const select = document.querySelector('[data-opt="property"]');
+	select.innerHTML = Object.entries(config.propertyTypes).map(([k, label]) => `<option value="${k}">${esc(label)}</option>`).join('');
+	if (config.publicMode) {
+		const render = document.querySelector('[data-opt="render"]');
+		Object.assign(render, { checked: false, disabled: true });
+		$('render-switch').title = 'Not available on the shared online version.';
+	}
+	restoreSettings();
+})();
+
+const host = () => new URL(data.colours.url).hostname;
+$('copy-code').addEventListener('click', () => copy(codeFor(tab), 'Copied the code'));
+$('dl-sheet').addEventListener('click', () => download(data.system.sheet, `palette-${host()}.html`, 'text/html'));
+$('dl-palette').addEventListener('click', () => {
+	const { sheet, ...system } = data.system;
+	download(JSON.stringify({ options: data.options, palette: data.palette, hotel: data.hotel, design: data.design, system, exports: data.exports }, null, '\t'), `colour-system-${host()}-${data.design.background}.json`, 'application/json');
+});
+$('dl-colours').addEventListener('click', () => download(JSON.stringify(data.colours, null, '\t'), `colours-${host()}.json`, 'application/json'));
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "colour-palette",
+  "version": "4.0.0",
+  "private": true,
+  "description": "Scrapes a website's colours and suggests a web and hotel-ready colour system.",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node test.mjs"
+  },
+  "dependencies": {
+    "playwright-core": "1.58.2"
+  }
+}

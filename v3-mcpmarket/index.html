@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Colour Palette v3</title>
+<style>
+	* { box-sizing: border-box; }
+	body { margin: 0; font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; color: #1c1c1e; background: #f6f6f4; }
+	main { max-width: 1080px; margin: 0 auto; padding: 48px 24px 80px; }
+	h1 { font-size: 28px; margin: 0 0 4px; }
+	h2 { font-size: 20px; margin: 56px 0 4px; }
+	h3 { font-size: 16px; margin: 20px 0 8px; }
+	.lead, .hint { color: #5c5c60; margin: 0 0 20px; }
+	nav { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 24px 0 0; font-size: 14px; }
+	nav a { color: #2b5fd9; }
+	form { display: flex; gap: 8px; flex-wrap: wrap; align-items: end; }
+	.field { display: flex; flex-direction: column; gap: 4px; font-size: 14px; font-weight: 600; }
+	.field.grow { flex: 1 1 320px; }
+	input, select { font: inherit; font-weight: 400; padding: 12px 14px; border: 1px solid #c8c8cc; border-radius: 8px; background: #fff; }
+	input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible { outline: 3px solid #2b5fd9; outline-offset: 2px; }
+	button { font: inherit; font-weight: 600; padding: 12px 20px; border: 0; border-radius: 8px; background: #1c1c1e; color: #fff; cursor: pointer; }
+	button:disabled { opacity: .6; cursor: wait; }
+	button.secondary { background: #fff; color: #1c1c1e; border: 1px solid #c8c8cc; font-weight: 500; padding: 8px 14px; }
+	.status { margin: 16px 0 0; min-height: 24px; }
+	.error { color: #b3261e; }
+	.notes { padding: 0 0 0 20px; color: #3a3a3e; }
+	.notes li { margin-bottom: 4px; }
+	.palette { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+	.card { background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e2e4; display: flex; flex-direction: column; }
+	.swatch { all: unset; cursor: pointer; display: block; height: 120px; padding: 12px; font-weight: 600; }
+	.swatch:focus-visible { outline: 3px solid #2b5fd9; outline-offset: -3px; }
+	.card .body { padding: 12px; font-size: 14px; }
+	.role { font-weight: 600; text-transform: capitalize; margin: 0; }
+	.was { display: flex; align-items: center; gap: 6px; color: #5c5c60; margin: 4px 0; }
+	.chip { display: inline-block; width: 16px; height: 16px; border-radius: 4px; border: 1px solid rgba(0,0,0,.15); vertical-align: middle; }
+	.card ul { margin: 8px 0 0; padding-left: 18px; color: #3a3a3e; }
+	.ok { color: #1e6b34; margin: 8px 0 0; }
+	.meta { margin: 2px 0; color: #3a3a3e; }
+	.meta strong { font-weight: 600; }
+	.usage { margin: 8px 0 0; padding: 6px 8px; background: #f3f3f1; border-radius: 6px; }
+	.feel { margin: 8px 0 0; padding: 6px 8px; border-left: 3px solid #c8c8cc; color: #3a3a3e; }
+	table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e2e2e4; font-size: 14px; }
+	th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #ececee; vertical-align: top; }
+	th { background: #fafafa; font-weight: 600; }
+	td code { font-size: 13px; }
+	.pass { color: #1e6b34; font-weight: 600; }
+	.fail { color: #b3261e; font-weight: 600; }
+	.preview { border-radius: 12px; overflow: hidden; border: 1px solid #e2e2e4; }
+	.preview .site { padding: 32px; }
+	.preview .site h3 { margin: 0 0 8px; font-size: 26px; }
+	.preview .site p { margin: 0 0 12px; max-width: 60ch; }
+	.preview .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 24px; }
+	.preview .tile { padding: 20px; border-radius: 10px; border: 1px solid; }
+	.preview .tile h4 { margin: 0 0 6px; font-size: 18px; }
+	.preview .btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+	.preview .btn { display: inline-block; padding: 10px 18px; border-radius: 8px; font-weight: 600; }
+	.preview .alert { margin-top: 16px; padding: 10px 14px; border-radius: 8px; border-left: 4px solid; font-size: 14px; }
+	.ext-group { margin-bottom: 20px; }
+	.ext { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+	.ext dl { margin: 0; padding: 12px; font-size: 13px; display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; }
+	.ext dt { font-weight: 600; }
+	.ext dd { margin: 0; }
+	.dots { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+	.dot { width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(0,0,0,.12); }
+	.scale { display: grid; grid-template-columns: repeat(11, 1fr); border-radius: 10px; overflow: hidden; border: 1px solid #e2e2e4; margin-bottom: 12px; }
+	.scale .swatch { height: 76px; padding: 6px; font-size: 11px; display: flex; flex-direction: column; justify-content: end; }
+	.scale .swatch.base { box-shadow: inset 0 0 0 3px currentColor; }
+	.scale-label { font-weight: 600; margin: 0 0 6px; text-transform: capitalize; }
+	.semantic { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+	.semantic .row { display: flex; height: 56px; }
+	.semantic .row .swatch { flex: 1; height: auto; font-size: 11px; padding: 6px; }
+	.cvd { display: grid; gap: 12px; }
+	.cvd .row { display: flex; height: 48px; border-radius: 8px; overflow: hidden; border: 1px solid #e2e2e4; }
+	.cvd .row div { flex: 1; font-size: 11px; padding: 4px 6px; display: flex; align-items: end; }
+	.grads { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+	.grads .fill { height: 120px; }
+	.curated { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+	.curated .mini { display: flex; height: 64px; }
+	.curated .mini div { flex: 1; }
+	.all { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+	.all .swatch { height: 72px; font-size: 13px; border-radius: 8px; border: 1px solid #e2e2e4; }
+	.all .swatch small { display: block; font-weight: 400; opacity: .8; }
+	.strip { display: flex; height: 56px; border-radius: 10px; overflow: hidden; filter: grayscale(1); border: 1px solid #e2e2e4; }
+	.strip div { flex: 1; }
+	.tabs { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+	.tabs button[aria-selected="true"] { background: #1c1c1e; color: #fff; }
+	pre { background: #1c1c1e; color: #f6f6f4; padding: 16px; border-radius: 10px; overflow: auto; font-size: 13px; max-height: 420px; margin: 0; }
+	.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+	.credit { margin-top: 48px; font-size: 13px; color: #5c5c60; }
+	.credit a { color: inherit; }
+	[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+	<h1>Colour Palette <small style="font-weight:400;color:#5c5c60">v3</small></h1>
+	<p class="lead">Paste a website address to see the colours it uses, a suggested palette, and a complete colour system for the site: light and dark mode, shades, status colours and colour-blind checks.</p>
+
+	<form id="form">
+		<div class="field grow">
+			<label for="url">Website address</label>
+			<input id="url" type="text" placeholder="e.g. www.example.com" required autocomplete="url">
+		</div>
+		<div class="field">
+			<label for="bg">Background style</label>
+			<select id="bg">
+				<option value="white">Pure white</option>
+				<option value="offwhite">Off-white (warm)</option>
+				<option value="tinted">Light tinted</option>
+				<option value="dark">Dark / moody</option>
+			</select>
+		</div>
+		<button id="go" type="submit">Get colours</button>
+	</form>
+	<p id="status" class="status" role="status" aria-live="polite"></p>
+
+	<section id="results" hidden>
+		<nav aria-label="Sections">
+			<a href="#s-preview">Preview</a><a href="#s-palette">Palette</a><a href="#s-extended">Extended palette</a><a href="#s-roles">Roles</a>
+			<a href="#s-dark">Dark mode</a><a href="#s-cvd">Colour blindness</a><a href="#s-shades">Shades</a><a href="#s-status">Status colours</a>
+			<a href="#s-gradients">Gradients</a><a href="#s-industry">Industry fit</a><a href="#s-dev">For developers</a>
+		</nav>
+
+		<h2 id="s-preview">Preview</h2>
+		<p class="hint">How the scheme looks on a simple page. Change the background style above to compare.</p>
+		<div id="preview" class="preview"></div>
+
+		<h2 id="s-palette">Suggested palette</h2>
+		<p class="hint">Click a colour to copy its code. <span id="mood"></span></p>
+		<ul id="notes" class="notes"></ul>
+		<div id="palette" class="palette"></div>
+
+		<h2 id="s-extended">Extended palette</h2>
+		<p class="hint" id="ext-strategy"></p>
+		<div id="extended"></div>
+		<h3>Harmony check</h3>
+		<div id="dots" class="dots"></div>
+
+		<h2 id="s-roles">Colour roles</h2>
+		<p class="hint">Which colour to use for what, on the <span id="bg-label"></span> background.</p>
+		<table>
+			<thead><tr><th>Role</th><th>Colour</th><th>Use for</th></tr></thead>
+			<tbody id="roles"></tbody>
+		</table>
+		<h3>Contrast checks</h3>
+		<p class="hint">Text needs 4.5:1 (WCAG 2.2 SC 1.4.3). Buttons and other interactive parts need 3:1 to stand out (SC 1.4.11). 4.49:1 is a fail.</p>
+		<table>
+			<thead><tr><th>Check</th><th>Ratio</th><th>Needs</th><th>Result</th></tr></thead>
+			<tbody id="checks"></tbody>
+		</table>
+
+		<h2 id="s-dark">Dark mode</h2>
+		<p class="hint">Dark mode remaps the roles rather than inverting colours. Surfaces get lighter as they rise, and brand colours get lighter and slightly calmer so they don't glow.</p>
+		<div id="dark-preview" class="preview"></div>
+		<h3>Dark mode contrast checks</h3>
+		<table>
+			<thead><tr><th>Check</th><th>Ratio</th><th>Needs</th><th>Result</th></tr></thead>
+			<tbody id="dark-checks"></tbody>
+		</table>
+
+		<h2 id="s-cvd">Colour blindness check</h2>
+		<p class="hint">How the main and status colours look to people with each type of colour blindness. Where two colours merge, add a second cue such as an icon, label or underline.</p>
+		<div id="cvd" class="cvd"></div>
+		<h3>Colour-blind-safe chart colours (Okabe-Ito)</h3>
+		<p class="hint">For charts, maps and graphs where colour carries the data. These stay distinct for most kinds of colour blindness.</p>
+		<div id="okabe" class="dots"></div>
+
+		<h2 id="s-shades">Shades</h2>
+		<p class="hint">Lighter and darker versions on an even lightness scale. Hover a shade to see what it's for; the outlined one is closest to the colour itself.</p>
+		<div id="shades"></div>
+
+		<h2 id="s-status">Status colours</h2>
+		<p class="hint">For success, warning, error and info messages: 50 for backgrounds, 500 for icons, 700 for text, 400 in dark mode.</p>
+		<div id="semantic" class="semantic"></div>
+
+		<h2 id="s-gradients">Gradients</h2>
+		<p class="hint">Blended in OKLCH so the middle doesn't go grey.</p>
+		<div id="gradients" class="grads"></div>
+
+		<h2 id="s-industry">Industry fit</h2>
+		<p class="hint">Industries whose usual colours match this palette. <span id="mood2"></span></p>
+		<table>
+			<thead><tr><th>Industry</th><th>Why these colours</th><th>Match</th></tr></thead>
+			<tbody id="industries"></tbody>
+		</table>
+		<h3>Curated palettes in a similar mood</h3>
+		<div id="curated" class="curated"></div>
+
+		<h2>Greyscale check</h2>
+		<p class="hint">If two colours look the same here, they only differ by hue, and many people won't be able to tell them apart.</p>
+		<div id="grey" class="strip"></div>
+
+		<h2 id="s-dev">For developers</h2>
+		<p class="hint">CSS tokens in three layers (raw colours, then roles for light and dark, then components), or Tailwind.</p>
+		<div class="tabs" role="tablist">
+			<button class="secondary" type="button" role="tab" data-tab="css" aria-selected="true">CSS tokens</button>
+			<button class="secondary" type="button" role="tab" data-tab="tailwind4" aria-selected="false">Tailwind v4</button>
+			<button class="secondary" type="button" role="tab" data-tab="tailwind3" aria-selected="false">Tailwind v3</button>
+		</div>
+		<pre id="code"></pre>
+		<div class="actions">
+			<button class="secondary" type="button" id="copy-code">Copy this code</button>
+			<button class="secondary" type="button" id="dl-sheet">Download swatch sheet (HTML)</button>
+			<button class="secondary" type="button" id="dl-palette">Download colour system (JSON)</button>
+			<button class="secondary" type="button" id="dl-colours">Download all colours (JSON)</button>
+		</div>
+
+		<h2>All colours found on the site</h2>
+		<p class="hint" id="all-hint"></p>
+		<div id="all" class="all"></div>
+	</section>
+	<p class="credit">
+		Palette rules based on the <a href="https://github.com/meodai/skill.color-expert" target="_blank" rel="noopener">color-expert skill</a> by David Aerne (CC BY 4.0),
+		the <a href="https://github.com/davepoon/buildwithclaude/tree/main/plugins/frontend-design-pro/skills/color-curator" target="_blank" rel="noopener">color-curator skill</a> by Dave Poon (MIT),
+		and these MCP Market skills: <a href="https://github.com/arnavpuri/designskills" target="_blank" rel="noopener">Color Palette Architect</a> by Arnav Puri (MIT),
+		<a href="https://github.com/alpacalabsllc/skills-for-architects" target="_blank" rel="noopener">AI Color Palette Designer</a> by Alpaca Labs (MIT),
+		<a href="https://github.com/svengraziani/ui-design" target="_blank" rel="noopener">UI Color Palettes</a> by Sven Graziani (usage guidelines only),
+		and <a href="https://mcpmarket.com/tools/skills/color-theory-design-systems" target="_blank" rel="noopener">Color Theory &amp; OKLCH</a> by Marvin Richter.
+	</p>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let data = null;
+let tab = 'css';
+
+const luminance = (hex) => [1, 3, 5].map((i) => {
+	const v = parseInt(hex.slice(i, i + 2), 16) / 255;
+	return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+}).reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
+const ratio = (a, b) => { const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+
+// Black or white text for a background.
+const textFor = (hex) => (luminance(hex) > 0.179 ? '#000' : '#fff');
+// A colour used as text on a card: falls back to black/white if it would be under 3:1.
+const readableOn = (fg, bg) => (ratio(fg, bg) >= 3 ? fg : textFor(bg));
+
+function swatch(hex, label, title) {
+	const b = document.createElement('button');
+	b.type = 'button';
+	b.className = 'swatch';
+	b.style.background = hex;
+	b.style.color = textFor(hex);
+	b.innerHTML = label;
+	if (title) b.title = title;
+	b.setAttribute('aria-label', `Copy ${hex}${title ? `, ${title}` : ''}`);
+	b.addEventListener('click', () => copy(hex, `Copied ${hex}`));
+	return b;
+}
+
+async function copy(text, message) {
+	await navigator.clipboard.writeText(text);
+	setStatus(message);
+}
+
+function setStatus(text, isError = false) {
+	$('status').textContent = text;
+	$('status').className = 'status' + (isError ? ' error' : '');
+}
+
+function download(content, name, type) {
+	const a = document.createElement('a');
+	a.href = URL.createObjectURL(new Blob([content], { type }));
+	a.download = name;
+	a.click();
+	URL.revokeObjectURL(a.href);
+}
+
+// APCA Lc guide levels.
+const readability = (lc) => (lc >= 90 ? 'ideal for body text' : lc >= 75 ? 'good for body text' : lc >= 60 ? 'large text' : lc >= 45 ? 'headlines only' : 'not for text');
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const chip = (hex) => `<span class="chip" style="background:${hex}"></span>`;
+const checkRows = (checks) => checks.map((c) => `<tr><td>${c.label}</td><td>${c.ratio}:1</td><td>${c.min}:1</td><td class="${c.pass ? 'pass' : 'fail'}">${c.pass ? 'Pass' : 'Fail'}</td></tr>`).join('');
+
+function previewHtml(t) {
+	return `<div class="site" style="background:${t.background};color:${t.text2}">
+		<h3 style="color:${t.text}">Welcome to your website</h3>
+		<p>This is body text in the secondary text colour. Here is <a href="#" style="color:${t.link}" onclick="return false">a text link</a>, underlined so it doesn't rely on colour alone.</p>
+		<p style="color:${t.muted};font-size:14px">A caption in the muted text colour.</p>
+		<div class="btns">
+			<span class="btn" style="background:${t.primary};color:${t.onPrimary}">Primary button</span>
+			<span class="btn" style="background:${t.accent};color:${t.onAccent}">Book now</span>
+		</div>
+		<div class="alert" style="background:${t.alertBg};color:${t.alertText};border-color:${t.alertBorder}">⚠ Error message: shown with an icon and words, not colour alone.</div>
+		<div class="cards">
+			${['Rooms', 'Location'].map((name) => `<div class="tile" style="background:${t.surface};border-color:${t.border}">
+				<h4 style="color:${t.text}">${name}</h4>
+				<p style="margin:0">A card on the surface colour, with a border.</p>
+				<p style="margin:8px 0 0;color:${readableOn(t.secondary, t.surface)};font-weight:600">Secondary colour detail</p>
+			</div>`).join('')}
+		</div>
+	</div>`;
+}
+
+function showCode() {
+	document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
+	$('code').textContent = data.system[tab];
+}
+
+function render({ colours, palette, design, system: s }) {
+	const r = Object.fromEntries(design.roles.map((x) => [x.key, x.hex]));
+	const p = (role) => design.palette.find((c) => c.role === role);
+	const sem = (name, step) => s.semantic[name].steps.find((x) => x.step === step).hex;
+	$('preview').innerHTML = previewHtml({
+		background: r.background, text: r['text-primary'], text2: r['text-secondary'], muted: r['text-muted'], link: r.link,
+		primary: r.primary, onPrimary: p('primary').textColour, accent: r.accent, onAccent: p('accent').textColour,
+		surface: r.surface, border: r.border, secondary: r.secondary,
+		alertBg: sem('error', 50), alertText: sem('error', 700), alertBorder: sem('error', 500),
+	});
+	const d = s.dark;
+	$('dark-preview').innerHTML = previewHtml({
+		background: d['bg-primary'], text: d['text-primary'], text2: d['text-secondary'], muted: d['text-tertiary'], link: d.link,
+		primary: d['interactive-primary'], onPrimary: d['on-interactive-primary'], accent: d['interactive-accent'], onAccent: d['on-interactive-accent'],
+		surface: d['surface-2'], border: d['border-default'], secondary: s.scales.secondary.steps.find((x) => x.step === 400).hex,
+		alertBg: d['surface-1'], alertText: d['color-error'], alertBorder: d['color-error'],
+	});
+	$('dark-checks').innerHTML = checkRows(s.darkChecks);
+
+	$('mood').textContent = `Closest mood: ${design.mood}.`;
+	$('mood2').textContent = `Closest curated mood: ${design.mood}.`;
+	$('notes').innerHTML = [...palette.notes, ...design.notes, ...s.notes].map((n) => `<li>${esc(n)}</li>`).join('');
+
+	$('palette').replaceChildren(...design.palette.map((c) => {
+		const card = document.createElement('div');
+		card.className = 'card';
+		card.append(swatch(c.hex, c.hex.toUpperCase()));
+		const changed = c.original && c.original !== c.hex;
+		const best = Math.max(c.wcag.white, c.wcag.darkText);
+		const psych = design.psychology.find((x) => x.role === c.role);
+		const body = document.createElement('div');
+		body.className = 'body';
+		body.innerHTML = `<p class="role">${c.role}</p>`
+			+ `<p class="meta">${c.character} ${psych ? psych.name : c.name}${c.harmony && c.role !== 'primary' ? `, ${c.harmony} to primary` : ''}</p>`
+			+ (changed ? `<p class="was">${chip(c.original)} Was ${c.original.toUpperCase()}</p>` : '')
+			+ (!c.original ? '<p class="was">New colour</p>' : '')
+			+ `<p class="meta">Use with <strong>${c.useWith}</strong></p>`
+			+ `<p class="meta" title="WCAG contrast ratio and APCA lightness contrast of that text on this colour">${best.toFixed(1)}:1 · APCA Lc ${c.apca} (${readability(c.apca)})</p>`
+			+ (psych ? `<p class="feel"><strong>Feels:</strong> ${esc(psych.feel)}<br><strong>Suits:</strong> ${esc(psych.bestFor)}<br>${esc(psych.temperature)}</p>` : '')
+			+ `<p class="meta usage">${esc(c.usage)}</p>`
+			+ (c.changes.length ? `<ul>${c.changes.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : '<p class="ok">Kept as it is.</p>');
+		card.append(body);
+		return card;
+	}));
+
+	$('ext-strategy').textContent = `${s.extended.name}: ${s.extended.strategy}`;
+	$('extended').replaceChildren(...s.extended.groups.map((g) => {
+		const wrap = Object.assign(document.createElement('div'), { className: 'ext-group' });
+		wrap.innerHTML = `<h3>${g.group}</h3>`;
+		const grid = Object.assign(document.createElement('div'), { className: 'ext' });
+		grid.append(...g.colours.map((c) => {
+			const card = Object.assign(document.createElement('div'), { className: 'card' });
+			const sw = swatch(c.hex, esc(c.name));
+			sw.style.color = c.textColour;
+			sw.style.height = '96px';
+			card.append(sw);
+			card.insertAdjacentHTML('beforeend', `<dl><dt>HEX</dt><dd>${c.hex.toUpperCase()}</dd><dt>RGB</dt><dd>${c.rgb}</dd><dt>HSL</dt><dd>${c.hsl}</dd><dt>Use</dt><dd>${esc(c.use)}</dd></dl>`);
+			return card;
+		}));
+		wrap.append(grid);
+		return wrap;
+	}));
+	$('dots').innerHTML = s.extended.groups.flatMap((g) => g.colours).map((c) => `<div class="dot" style="background:${c.hex}" title="${esc(c.name)} ${c.hex}"></div>`).join('');
+
+	$('bg-label').textContent = design.backgroundLabel.toLowerCase();
+	$('roles').innerHTML = design.roles.map((x) => `<tr><td>${x.role}</td><td>${chip(x.hex)} <code>${x.hex}</code></td><td>${esc(x.usage)}</td></tr>`).join('');
+	$('checks').innerHTML = checkRows(design.checks);
+
+	$('cvd').innerHTML = s.cvd.map((c) => `<div>
+		<p class="scale-label" style="text-transform:none">${c.label} <span style="font-weight:400;color:#5c5c60">· ${c.share}</span></p>
+		<div class="row">${Object.entries(c.swatches).map(([role, hex]) => `<div style="background:${hex};color:${textFor(hex)}">${role}</div>`).join('')}</div>
+		<p class="meta" style="margin-top:6px">${c.confused.length ? `<span class="fail">Hard to tell apart:</span> ${c.confused.map((x) => x.join(' and ')).join('; ')}` : '<span class="pass">All distinct</span>'}</p>
+	</div>`).join('');
+	$('okabe').innerHTML = s.okabeIto.map(([name, hex]) => `<div class="dot" style="background:${hex}" title="${name} ${hex}"></div>`).join('');
+
+	$('shades').replaceChildren(...['brand', 'secondary', 'accent', 'gray'].flatMap((name) => {
+		const scale = s.scales[name];
+		const label = Object.assign(document.createElement('p'), { className: 'scale-label', textContent: name === 'brand' ? 'primary' : name === 'gray' ? 'neutral grey (tinted with the primary)' : name });
+		const row = Object.assign(document.createElement('div'), { className: 'scale' });
+		row.append(...scale.steps.map((x) => {
+			const b = swatch(x.hex, `${x.step}<br>${x.hex.toUpperCase()}`, x.use);
+			if (x.step === scale.nearest) b.classList.add('base');
+			return b;
+		}));
+		return [label, row];
+	}));
+
+	$('semantic').replaceChildren(...Object.entries(s.semantic).map(([name, v]) => {
+		const card = Object.assign(document.createElement('div'), { className: 'card' });
+		const row = Object.assign(document.createElement('div'), { className: 'row' });
+		row.append(...v.steps.map((x) => swatch(x.hex, String(x.step), x.use)));
+		card.append(row);
+		card.insertAdjacentHTML('beforeend', `<div class="body"><p class="role">${name}</p></div>`);
+		return card;
+	}));
+
+	$('gradients').innerHTML = s.gradients.map((g) => `<div class="card"><div class="fill" style="background:${g.css}"></div>
+		<div class="body"><p class="role">${g.name}</p><p class="meta">${esc(g.note)}</p><p class="meta"><code style="font-size:11px;word-break:break-all">${esc(g.css)}</code></p></div></div>`).join('');
+
+	$('industries').innerHTML = s.industries.length
+		? s.industries.map((i) => `<tr><td>${i.industry}</td><td>${i.why}</td><td>${i.fit}</td></tr>`).join('')
+		: '<tr><td colspan="3">No close industry match: this palette is distinctive.</td></tr>';
+	$('curated').innerHTML = design.curated.map((c) => `<div class="card">
+		<div class="mini">${Object.values(c.colours).map((hex) => `<div style="background:${hex}" title="${hex}"></div>`).join('')}</div>
+		<div class="body"><p class="role">${esc(c.name)}</p><p class="meta">${esc(c.mood)}</p>
+		<p class="meta">${Object.entries(c.colours).map(([k, hex]) => `${chip(hex)} <code>${hex}</code> ${k === 'extra' ? '' : k}`).join('<br>')}</p></div>
+	</div>`).join('');
+
+	$('grey').replaceChildren(...design.palette.map((c) => Object.assign(document.createElement('div'), { title: c.role, style: `background:${c.hex}` })));
+	showCode();
+
+	$('all-hint').textContent = `${colours.totalColours} colours, most used first. Images are left out.`;
+	$('all').replaceChildren(...colours.colours.map((c) => swatch(c.hex, `${c.hex.toUpperCase()}<small>used ${c.count}×</small>`)));
+	$('results').hidden = false;
+}
+
+async function load(fresh) {
+	const url = $('url').value.trim();
+	if (!url) return;
+	$('go').disabled = true;
+	setStatus(fresh ? 'Reading the website… this can take up to a minute.' : 'Updating…');
+	try {
+		const res = await fetch(`/api/palette?url=${encodeURIComponent(url)}&bg=${$('bg').value}${fresh ? '&fresh=1' : ''}`);
+		const json = await res.json();
+		if (!res.ok) throw new Error(json.error);
+		data = json;
+		render(json);
+		setStatus(`Done: ${json.colours.url}`);
+	} catch (err) {
+		setStatus(err.message || 'Something went wrong. Is the Colour Palette window still open?', true);
+	} finally {
+		$('go').disabled = false;
+	}
+}
+
+$('form').addEventListener('submit', (e) => { e.preventDefault(); load(true); });
+$('bg').addEventListener('change', () => data && load(false));
+document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => { tab = b.dataset.tab; showCode(); }));
+
+const host = () => new URL(data.colours.url).hostname;
+$('copy-code').addEventListener('click', () => copy(data.system[tab], 'Copied the code'));
+$('dl-sheet').addEventListener('click', () => download(data.system.sheet, `palette-${host()}.html`, 'text/html'));
+$('dl-palette').addEventListener('click', () => {
+	const { sheet, ...system } = data.system;
+	download(JSON.stringify({ palette: data.palette, design: data.design, system }, null, '\t'), `colour-system-${host()}-${data.design.background}.json`, 'application/json');
+});
+$('dl-colours').addEventListener('click', () => download(JSON.stringify(data.colours, null, '\t'), `colours-${host()}.json`, 'application/json'));
+</script>
+</body>
+</html>
