@@ -3,6 +3,17 @@ import assert from 'node:assert/strict';
 import { deflateSync } from 'node:zlib';
 import { parseColour, hexToRgb } from './colour.mjs';
 import { decodePng, measureCoverage } from './render-scrape.mjs';
+import { extractColours } from './scrape-colours.mjs';
+
+// Times used in the CSS: every use in a declaration counts; selectors (#abc as an id) and url() images don't.
+const tally = extractColours(`
+	.a:not(#abc) { color: #1e73be; background: url("data:image/svg+xml,#ff0000") #fff; }
+	.b { border: 1px solid #1E73BE; box-shadow: 0 0 2px rgba(0, 0, 0, 0); }
+	@media (min-width: 600px) { .c { background-color: rgb(30, 115, 190); color: #ffffff; } }
+`);
+assert.deepEqual(Object.keys(tally).sort(), ['#1e73be', '#ffffff']);
+assert.equal(tally['#1e73be'].count, 3, 'hex in any case and rgb() count as the same colour');
+assert.equal(tally['#ffffff'].count, 2);
 
 // Reading CSS colours as browsers report them.
 assert.deepEqual(parseColour('#FFF'), { hex: '#ffffff', alpha: 1 });

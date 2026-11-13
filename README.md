@@ -25,9 +25,9 @@ Then open the address it prints. Run the tests with `node test.mjs` in any versi
 | `v3-mcpmarket` | 4323 | Dark mode, an extended 8-12 colour palette with names, colour-blindness simulation, status colours, gradients, 3-layer CSS tokens, a downloadable swatch sheet. |
 | `v4-web-hotel` | 4324 | Ranks colours by how much of the page they cover (full-page screenshot, images left out). A choose step to keep, change or generate each brand colour, similar palettes, hotel property types, photo overlay and Book now checks, interaction states, and Pebble theme, email, booking engine and print exports. |
 | `v5-pebble-theme` | 4325 | A theme-aware Pebble export: point it at a site's theme folder and it reads that site's own `_variables.scss` and searches its styles. Each variable is marked change, new, same, follows (a pointer that updates by itself) or skipped (not in the theme and unused), with how often it's used. It downloads the whole updated file (order, comments and line endings kept), shows the changed lines, covers dependent colours, and warns about knock-on effects (form fields, contrast pairs, saying whether the change causes a problem or it already exists). |
-| `v6-simple` | 4326 | The simple one: no suggestions or settings. Shows the 5 colours covering the most of the page as a Coolors-style palette, then every colour on the page sorted by coverage. Click any colour to copy it. |
+| `v6-simple` | 4326 | The simple one: no suggestions or settings. Shows the top 5 colours as a Coolors-style palette, then every colour on the page in order. A Rank by toggle switches between % of page covered and times used in the CSS. Click any colour to copy it. |
 
-v4, v5 and v6 measure page coverage by opening the page in Microsoft Edge or Google Chrome through `playwright-core` (`npm install` adds it; no browser download) and counting pixels in a full-page screenshot, with images left out. Without it, v4 and v5 rank colours by how often the site's CSS uses them; v6 needs it.
+v4, v5 and v6 measure page coverage by opening the page in Microsoft Edge or Google Chrome through `playwright-core` (`npm install` adds it; no browser download) and counting pixels in a full-page screenshot, with images left out. Without it, v4 and v5 rank colours by how often the site's CSS uses them, and v6's "Times used in the CSS" option still works.
 
 ## Credits
 

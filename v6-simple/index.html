@@ -45,19 +45,32 @@
 	.bar span { display: block; height: 100%; background: #1c1c1e; border-radius: 4px; }
 	.share { text-align: right; font-variant-numeric: tabular-nums; font-size: 14px; }
 	@media (max-width: 640px) { .list button { grid-template-columns: 44px 1fr 60px; } .list .rgb, .list .bar { display: none; } }
+	/* Rank by: a two-way segmented switch. */
+	.method { border: 0; padding: 0; margin: 14px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+	.method legend { float: left; font-size: 14px; color: #5c5c60; margin-right: 4px; padding: 0; }
+	.method label { position: relative; }
+	.method input { position: absolute; opacity: 0; }
+	.method span { display: block; padding: 8px 14px; border: 1px solid #c8c8cc; border-radius: 8px; background: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
+	.method input:checked + span { background: #1c1c1e; border-color: #1c1c1e; color: #fff; }
+	.method input:focus-visible + span { outline: 3px solid #2b5fd9; outline-offset: 2px; }
 	[hidden] { display: none !important; }
 </style>
 </head>
 <body>
 <main>
 	<h1>Colour Palette <small style="font-weight:400;color:#5c5c60">v6</small></h1>
-	<p class="lead">Paste a website address to see every colour on the page, ranked by how much of the page it covers. Images are left out.</p>
+	<p class="lead">Paste a website address to see every colour on the page, ranked by how much of the page it covers or by how often the CSS uses it. Images are left out.</p>
 
 	<form id="form">
 		<label class="hidden" for="url">Website address</label>
 		<input id="url" type="text" placeholder="e.g. www.example.com" required autocomplete="url">
 		<button id="go" type="submit">Get colours</button>
 	</form>
+	<fieldset class="method">
+		<legend>Rank by</legend>
+		<label><input type="radio" name="method" value="coverage" checked><span>% of page covered</span></label>
+		<label><input type="radio" name="method" value="css"><span>Times used in the CSS</span></label>
+	</fieldset>
 	<p id="status" class="status" role="status" aria-live="polite"></p>
 
 	<section id="results" hidden>
@@ -93,29 +106,38 @@ async function copy(hex) {
 	setStatus(`Copied ${hex.toUpperCase()}`);
 }
 
-function render({ url, colours, measured }) {
+function render(result) {
+	const { url, colours } = result;
+	const css = result.method === 'css';
+	// How much of each colour there is, in the chosen ranking: page coverage, or times used in the CSS.
+	const amount = (c) => (css ? c.count : c.coverage);
+	const long = (c) => (css ? `used ${c.count}× in the CSS` : `${pct(c.coverage)} of the page`);
+	const short = (c) => (css ? `${c.count}×` : pct(c.coverage));
+
 	$('palette').replaceChildren(...colours.slice(0, 5).map((c) => {
 		const b = document.createElement('button');
 		b.type = 'button';
 		b.style.background = c.hex;
 		b.style.color = textFor(c.hex);
-		b.innerHTML = `<span class="hex">${c.hex.slice(1).toUpperCase()}</span><span class="pct">${pct(c.coverage)} of the page</span><span class="copy">Click to copy</span>`;
-		b.setAttribute('aria-label', `${c.hex.toUpperCase()}, ${pct(c.coverage)} of the page. Copy`);
+		b.innerHTML = `<span class="hex">${c.hex.slice(1).toUpperCase()}</span><span class="pct">${long(c)}</span><span class="copy">Click to copy</span>`;
+		b.setAttribute('aria-label', `${c.hex.toUpperCase()}, ${long(c)}. Copy`);
 		b.addEventListener('click', () => copy(c.hex));
 		return b;
 	}));
 
-	const top = colours[0]?.coverage || 1;
+	const top = amount(colours[0]) || 1;
 	$('all-heading').textContent = `All colours (${colours.length})`;
-	$('measured').textContent = `Measured ${measured.height.toLocaleString()}px of ${measured.pageHeight.toLocaleString()}px of page${measured.imagesLeftOut ? `, with ${measured.imagesLeftOut} images and photo backgrounds left out` : ''}. Shares are of the page outside those images. Click a colour to copy it.`;
+	$('measured').textContent = css
+		? `Counted in ${result.stylesheets.length} stylesheet${result.stylesheets.length === 1 ? '' : 's'}, <style> blocks and inline styles${result.skipped.length ? ` (${result.skipped.length} skipped, e.g. WordPress's own)` : ''}. Images are left out. Click a colour to copy it.`
+		: `Measured ${result.measured.height.toLocaleString()}px of ${result.measured.pageHeight.toLocaleString()}px of page${result.measured.imagesLeftOut ? `, with ${result.measured.imagesLeftOut} images and photo backgrounds left out` : ''}. Shares are of the page outside those images. Click a colour to copy it.`;
 	$('list').replaceChildren(...colours.map((c) => {
 		const li = document.createElement('li');
-		li.innerHTML = `<button type="button" aria-label="${c.hex.toUpperCase()}, ${pct(c.coverage)} of the page. Copy">
+		li.innerHTML = `<button type="button" aria-label="${c.hex.toUpperCase()}, ${long(c)}. Copy">
 			<span class="chip" style="background:${c.hex}"></span>
 			<span class="code">${c.hex.toUpperCase()}</span>
 			<span class="code rgb">${rgb(c.hex)}</span>
-			<span class="bar"><span style="width:${Math.max(0.5, (c.coverage / top) * 100)}%"></span></span>
-			<span class="share">${pct(c.coverage)}</span></button>`;
+			<span class="bar"><span style="width:${Math.max(0.5, (amount(c) / top) * 100)}%"></span></span>
+			<span class="share">${short(c)}</span></button>`;
 		li.querySelector('button').addEventListener('click', () => copy(c.hex));
 		return li;
 	}));
@@ -123,14 +145,15 @@ function render({ url, colours, measured }) {
 	setStatus(`Done: ${url}`);
 }
 
-$('form').addEventListener('submit', async (e) => {
-	e.preventDefault();
+const method = () => document.querySelector('input[name="method"]:checked').value;
+
+async function load() {
 	const url = $('url').value.trim();
 	if (!url) return;
 	$('go').disabled = true;
-	setStatus('Opening the page and measuring its colours… this can take up to a minute.');
+	setStatus(method() === 'css' ? 'Reading the site\'s CSS…' : 'Opening the page and measuring its colours… this can take up to a minute.');
 	try {
-		const res = await fetch(`/api/colours?url=${encodeURIComponent(url)}`);
+		const res = await fetch(`/api/colours?url=${encodeURIComponent(url)}&method=${method()}`);
 		const json = await res.json();
 		if (!res.ok) throw new Error(json.error);
 		render(json);
@@ -139,7 +162,18 @@ $('form').addEventListener('submit', async (e) => {
 	} finally {
 		$('go').disabled = false;
 	}
-});
+}
+
+$('form').addEventListener('submit', (e) => { e.preventDefault(); load(); });
+// The ranking is remembered on this computer; switching it re-ranks the same site.
+const saved = localStorage.getItem('colour-palette-v6-method');
+if (saved) document.querySelector(`input[name="method"][value="${saved}"]`)?.click();
+for (const radio of document.querySelectorAll('input[name="method"]')) {
+	radio.addEventListener('change', () => {
+		localStorage.setItem('colour-palette-v6-method', method());
+		if (!$('results').hidden) load();
+	});
+}
 </script>
 </body>
 </html>
