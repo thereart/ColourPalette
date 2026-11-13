@@ -6,6 +6,7 @@ import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { renderScrape } from './render-scrape.mjs';
 import { scrape } from './scrape-colours.mjs';
+import { classify } from './classify.mjs';
 
 const PORT = Number(process.env.PORT) || 4326;
 const page = new URL('./index.html', import.meta.url);
@@ -20,8 +21,11 @@ const send = (res, status, body, type = 'application/json') => {
 async function cssColours(url) {
 	const result = await scrape(url);
 	const total = result.colours.reduce((s, c) => s + c.count, 0) || 1;
-	return { ...result, method: 'css', colours: result.colours.map((c) => ({ hex: c.hex, count: c.count, share: c.count / total })) };
+	return { ...result, method: 'css', colours: result.colours.map((c) => ({ hex: c.hex, count: c.count, share: c.count / total, roles: c.roles, variables: c.variables })) };
 }
+
+// Each colour gets a label (brand, background or text) and the reasons for it.
+const labelled = (result) => ({ ...result, colours: result.colours.map((c) => ({ ...c, ...classify(c) })) });
 
 createServer(async (req, res) => {
 	const { pathname, searchParams } = new URL(req.url, `http://${req.headers.host}`);
@@ -38,7 +42,7 @@ createServer(async (req, res) => {
 	const method = searchParams.get('method') === 'css' ? 'css' : 'coverage';
 	try {
 		const key = `${method}:${target}`;
-		const result = cache.get(key) ?? (method === 'css' ? await cssColours(target) : await renderScrape(target));
+		const result = cache.get(key) ?? labelled(method === 'css' ? await cssColours(target) : await renderScrape(target));
 		if (!result.totalColours) return send(res, 422, { error: 'No colours were found on that page.' });
 		if (cache.size > 20) cache.delete(cache.keys().next().value);
 		cache.set(key, result);

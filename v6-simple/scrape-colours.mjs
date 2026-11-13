@@ -8,6 +8,19 @@
 import { writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { parseColour } from './colour.mjs';
+import { emptyRoles, countRole } from './render-scrape.mjs';
+
+// What a rule's selector says about where its colours are used (CSS mode has no page to look at).
+const el = (names) => new RegExp(`(^|[\\s,>+~(])(${names})(?=[\\s,.:#\\[>+~)]|$)`, 'i');
+const SELECTOR = {
+	interactive: [el('a|button'), /\.btn|btn-|button|\[type=["']?(submit|button)|cta|book-?now/i],
+	heading: [el('h[1-6]'), /title|heading/i],
+	nav: [/nav|menu|header/i],
+	large: [el('html|body|main|section|footer|header'), /wrapper|container|hero|banner|section|page-bg/i],
+};
+const flagsFor = (selector) => Object.fromEntries(Object.entries(SELECTOR).map(([k, res]) => [k, res.some((re) => re.test(selector))]));
+// Which role a property gives a colour; custom properties (--name) only record the name.
+const roleOf = (prop) => (/^background(-color)?$/.test(prop) ? 'bg' : /^(color|fill|-webkit-text-fill-color)$/.test(prop) ? 'text' : /^(border|outline)/.test(prop) ? 'border' : null);
 
 const COLOUR_TOKEN = /#[0-9a-f]{3,8}\b|(?:rgba?|hsla?)\([^)]*\)/gi;
 // WordPress core ships the same default colours on every site; they aren't the site's design.
@@ -17,7 +30,8 @@ const SKIP_PROPERTY = /^--wp--preset--|^--wp-admin/;
 const stripCss = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/url\((?:"[^"]*"|'[^']*'|[^)]*)\)/gi, '');
 
 // Adds every colour in a block of declarations ("color: #fff; background: ...") to the tally.
-function addDeclarations(text, tally, source) {
+function addDeclarations(text, tally, source, selector = '') {
+	const flags = flagsFor(selector);
 	for (const decl of text.split(';')) {
 		const i = decl.indexOf(':');
 		if (i < 0) continue;
@@ -26,19 +40,22 @@ function addDeclarations(text, tally, source) {
 		for (const token of decl.slice(i + 1).match(COLOUR_TOKEN) || []) {
 			const c = parseColour(token);
 			if (!c || c.alpha === 0) continue;
-			const entry = (tally[c.hex] ??= { hex: c.hex, count: 0, translucent: 0, properties: {}, variables: [], sources: [] });
+			const entry = (tally[c.hex] ??= { hex: c.hex, count: 0, translucent: 0, properties: {}, variables: [], roles: emptyRoles(), sources: [] });
 			entry.count++;
 			if (c.alpha < 1) entry.translucent++;
 			entry.properties[prop] = (entry.properties[prop] || 0) + 1;
 			if (prop.startsWith('--') && !entry.variables.includes(prop)) entry.variables.push(prop);
+			const role = roleOf(prop);
+			if (role) countRole(entry.roles, role, flags);
 			if (!entry.sources.includes(source)) entry.sources.push(source);
 		}
 	}
 }
 
 // Rule bodies are the innermost {...} blocks, so selectors (#id, :not(#abc)) are never read as colours.
+// The text before each body is its selector, used to tell buttons, headings and the nav apart.
 export function extractColours(css, tally = {}, source = 'inline') {
-	for (const [, body] of stripCss(css).matchAll(/\{([^{}]*)\}/g)) addDeclarations(body, tally, source);
+	for (const [, selector, body] of stripCss(css).matchAll(/([^{}]*)\{([^{}]*)\}/g)) addDeclarations(body, tally, source, selector.trim());
 	return tally;
 }
 

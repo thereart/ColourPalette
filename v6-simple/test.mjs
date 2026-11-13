@@ -4,6 +4,7 @@ import { deflateSync } from 'node:zlib';
 import { parseColour, hexToRgb } from './colour.mjs';
 import { decodePng, measureCoverage } from './render-scrape.mjs';
 import { extractColours } from './scrape-colours.mjs';
+import { classify } from './classify.mjs';
 
 // Times used in the CSS: every use in a declaration counts; selectors (#abc as an id) and url() images don't.
 const tally = extractColours(`
@@ -73,5 +74,51 @@ const sc = measureCoverage(specks, [], ['#1e73be', '#ffffff'], 1);
 assert.ok(sc.coverage['#1e73be'] > 0);
 assert.equal(sc.coverage['#7b2d43'], undefined);
 assert.ok(Math.abs(sc.coverage['#0a785a'] - 0.1) < 1e-9);
+
+// Brand / Background / Text.
+const roles = (r) => ({ bg: 0, bgLarge: 0, text: 0, border: 0, interactive: 0, interactiveBg: 0, heading: 0, nav: 0, ...r });
+const label = (hex, r = {}, extra = {}) => classify({ hex, roles: roles(r), variables: [], ...extra });
+// Colourful colours on buttons and links are brand; filling large areas makes them "brand, used as a background".
+assert.equal(label('#3858e9', { interactive: 20, text: 10, bg: 3 }).label, 'brand');
+assert.equal(label('#3858e9', { interactive: 20, text: 10, bg: 3 }).asBackground, false);
+assert.deepEqual([label('#58cc02', { bg: 2, bgLarge: 1, text: 6 }).label, label('#58cc02', { bg: 2, bgLarge: 1, text: 6 }).asBackground], ['brand', true]);
+// White and pale tints filling areas are backgrounds, even when white text sits on buttons.
+assert.equal(label('#ffffff', { bg: 300, bgLarge: 3, text: 40, interactive: 31 }).label, 'background');
+assert.equal(label('#f6f6f6', { bg: 3, bgLarge: 3 }).label, 'background');
+assert.equal(label('#ddf4ff', { bg: 1, bgLarge: 1 }).label, 'background');
+// Neutrals used mostly for text are text, unless they cover a lot of the page (then it's dark sections).
+assert.equal(label('#1a1919', { text: 5, heading: 2 }).label, 'text');
+assert.equal(label('#23282d', { text: 30, bg: 4, bgLarge: 2 }, { coverage: 0.19 }).label, 'background');
+assert.equal(label('#333333', { text: 30, bg: 4 }, { coverage: 0.03 }).label, 'background');
+// A black brand: near-black buttons make it brand. A grey that happens to be on a few buttons doesn't.
+assert.equal(label('#111111', { bg: 6, interactiveBg: 4, interactive: 4, text: 2 }).label, 'brand');
+assert.equal(label('#5a5a5a', { bg: 3, interactiveBg: 3, interactive: 3 }).label, 'background');
+assert.equal(label('#000000', { bg: 8, interactiveBg: 2, text: 12 }).label, 'text');
+// Names count: --color-primary makes a neutral brand; --bg names keep it a background; --text-primary isn't brand.
+assert.equal(label('#000000', { bg: 1 }, { variables: ['--color-primary'] }).label, 'brand');
+assert.equal(label('#000000', { bg: 1, interactiveBg: 3 }, { variables: ['--color-bg-dark'] }).label, 'background');
+assert.equal(label('#222222', { text: 9 }, { variables: ['--color-text-primary'] }).label, 'text');
+// Reasons are given in plain words.
+assert.match(label('#3858e9', { interactive: 20 }).reasons.join(' '), /Colourful.*On 20 buttons or links/);
+
+// CSS mode: roles come from each rule's selector and property.
+const cssTally = extractColours(`
+	.site-header .btn-primary { background-color: #e07a5f; color: #ffffff; }
+	a:hover { color: #e07a5f; }
+	h2.section-title { color: #3a6b8c; }
+	body { background: #faf8f5; color: #222222; }
+	.card { border: 1px solid #dddddd; }
+	:root { --color-primary: #e07a5f; }
+`);
+const rr = (hex) => cssTally[hex].roles;
+assert.deepEqual([rr('#e07a5f').bg, rr('#e07a5f').interactiveBg, rr('#e07a5f').text, rr('#e07a5f').nav], [1, 1, 1, 1]);
+assert.ok(rr('#e07a5f').interactive >= 2, 'button background and link hover both count');
+assert.equal(rr('#3a6b8c').heading, 1);
+assert.deepEqual([rr('#faf8f5').bg, rr('#faf8f5').bgLarge], [1, 1]);
+assert.equal(rr('#dddddd').border, 1);
+assert.deepEqual(cssTally['#e07a5f'].variables, ['--color-primary']);
+assert.equal(classify(cssTally['#e07a5f']).label, 'brand');
+assert.equal(classify(cssTally['#faf8f5']).label, 'background');
+assert.equal(classify(cssTally['#222222']).label, 'text', 'the body text colour, even though body is a large area');
 
 console.log('ok');

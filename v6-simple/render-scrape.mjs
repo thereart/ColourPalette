@@ -13,6 +13,16 @@ const STEP = 2; // sample every 2nd pixel across and down: a quarter of the pixe
 const SAME = 4; // a pixel within 4/255 per channel of a CSS colour counts as that colour (allows for rendering rounding)
 const MIN_UNNAMED = 0.005; // flat colours not in the CSS (e.g. a translucent overlay blended onto a background) count from 0.5% up
 
+// How a colour is used, counted per element (or per CSS rule in CSS mode). Shared with scrape-colours.mjs.
+export const emptyRoles = () => ({ bg: 0, bgLarge: 0, text: 0, border: 0, interactive: 0, interactiveBg: 0, heading: 0, nav: 0 });
+export function countRole(roles, role, { interactive, heading, nav, large }) {
+	roles[role]++;
+	if (role === 'bg' && large) roles.bgLarge++;
+	if (interactive) { roles.interactive++; if (role === 'bg') roles.interactiveBg++; }
+	if (heading && role === 'text') roles.heading++;
+	if (nav) roles.nav++;
+}
+
 // Minimal PNG reader for Chrome screenshots: 8-bit RGB or RGBA, not interlaced.
 export function decodePng(buf) {
 	let pos = 8, width, height, bitDepth, colourType, interlace;
@@ -68,14 +78,23 @@ export function measureCoverage({ width, height, bpp, data }, exclude, cssColour
 	const rgb = (key) => [key >> 16, (key >> 8) & 255, key & 255];
 	const known = cssColours.map((hex) => [hex, [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))]);
 	const result = new Map(); // hex -> pixels
+	const unnamed = [];
 	for (const [key, n] of counts) {
 		const p = rgb(key);
 		const match = known.find(([, k]) => Math.abs(k[0] - p[0]) <= SAME && Math.abs(k[1] - p[1]) <= SAME && Math.abs(k[2] - p[2]) <= SAME);
 		// Small brand colours (link text, icons) still count; unknown colours under the threshold are anti-aliasing noise.
 		if (!match && n < total * MIN_UNNAMED) continue;
-		const hex = match ? match[0] : toHex(...p);
-		result.set(hex, (result.get(hex) || 0) + n);
+		if (match) { result.set(match[0], (result.get(match[0]) || 0) + n); continue; }
+		unnamed.push([p, n]);
 	}
+	// Flat colours not in the CSS (a shaded area, an overlay blend) often come as several near-identical shades:
+	// each still has to pass the threshold on its own, then shades within 8/255 per channel count as one, under the most common.
+	const groups = [];
+	for (const [p, n] of unnamed.sort((a, b) => b[1] - a[1])) {
+		const g = groups.find((x) => x.p.every((v, i) => Math.abs(v - p[i]) <= 8));
+		if (g) g.n += n; else groups.push({ p, n });
+	}
+	for (const g of groups) result.set(toHex(...g.p), (result.get(toHex(...g.p)) || 0) + g.n);
 	return { total, coverage: Object.fromEntries([...result].map(([hex, n]) => [hex, total ? n / total : 0])) };
 }
 
@@ -102,33 +121,60 @@ export async function renderScrape(url) {
 		}
 		// Give late content a few seconds to arrive. Busy sites (tracking, live chat) never go fully quiet, so this can't fail.
 		await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
-		// The colours the page's CSS uses (and where), plus every image area to leave out, in page coordinates.
-		const { used, exclude, pageHeight } = await page.evaluate(() => {
+		// How each colour is used (background, text, border; on buttons/links, headings, the nav; large areas),
+		// the page's CSS variable names, and every image area to leave out, in page coordinates.
+		const { uses, named, exclude, pageHeight } = await page.evaluate(() => {
 			const media = 'img, picture, video, canvas, svg, iframe, object, embed';
-			const used = [], exclude = [];
+			const interactive = 'a, button, [role="button"], input[type="submit"], input[type="button"], .btn, .button, [class*="btn-"], [class*="button"]';
+			const uses = [], exclude = [];
 			for (const el of document.querySelectorAll('body, body *')) {
 				const style = getComputedStyle(el);
 				const r = el.getBoundingClientRect();
 				const box = { x: r.left + scrollX, y: r.top + scrollY, width: r.width, height: r.height };
 				if (el.matches(media) || /url\(/.test(style.backgroundImage)) { if (box.width && box.height) exclude.push(box); continue; }
-				if (el.closest(media) || style.display === 'none') continue;
-				used.push(['background-color', style.backgroundColor], ['color', style.color]);
-				for (const side of ['Top', 'Right', 'Bottom', 'Left']) if (parseFloat(style[`border${side}Width`])) used.push(['border-color', style[`border${side}Color`]]);
+				if (el.closest(media) || style.display === 'none' || style.visibility === 'hidden' || !(box.width && box.height)) continue;
+				// flags: 1 button/link, 2 heading, 4 nav/header, 8 large area (half the window wide and 150px tall)
+				const flags = (el.closest(interactive) ? 1 : 0) | (el.closest('h1, h2, h3, h4, h5, h6') ? 2 : 0)
+					| (el.closest('nav, header, [role="navigation"]') ? 4 : 0) | (box.width >= innerWidth * 0.5 && box.height >= 150 ? 8 : 0);
+				uses.push([style.backgroundColor, 'bg', flags]);
+				// Text colour only counts where there's text (every element has a colour, most show none).
+				const hasText = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()) || (el.matches('input[type="submit"], input[type="button"]') && el.value);
+				if (hasText) uses.push([style.color, 'text', flags]);
+				const side = ['Top', 'Right', 'Bottom', 'Left'].find((s) => parseFloat(style[`border${s}Width`]) && style[`border${s}Style`] !== 'none');
+				if (side) uses.push([style[`border${side}Color`], 'border', flags]);
 			}
-			return { used, exclude, pageHeight: document.documentElement.scrollHeight };
+			// Custom properties set on :root/html, read from every stylesheet the page is allowed to read.
+			const names = new Set();
+			for (const sheet of document.styleSheets) {
+				let rules;
+				try { rules = sheet.cssRules; } catch { continue; } // other sites' stylesheets can't be read
+				for (const rule of rules) {
+					if (rule.selectorText && /(^|,)\s*(:root|html)\s*(,|$)/.test(rule.selectorText)) for (const prop of rule.style) if (prop.startsWith('--')) names.add(prop);
+				}
+			}
+			const root = getComputedStyle(document.documentElement);
+			return { uses, named: [...names].map((n) => [n, root.getPropertyValue(n).trim()]), exclude, pageHeight: document.documentElement.scrollHeight };
 		});
 
 		const height = Math.min(pageHeight, MAX_HEIGHT);
 		const shot = await page.screenshot({ fullPage: true, type: 'png', clip: { x: 0, y: 0, width: 1366, height }, animations: 'disabled' });
 		const tally = {};
-		for (const [prop, value] of used) {
+		const PROP = { bg: 'background-color', text: 'color', border: 'border-color' };
+		const newEntry = (hex) => ({ hex, properties: {}, variables: [], roles: emptyRoles(), sources: ['rendered page'] });
+		for (const [value, role, flags] of uses) {
 			const c = parseColour(value);
 			if (!c || c.alpha < 1) continue; // translucent colours blend with what's behind, so the blend is measured instead
-			const entry = (tally[c.hex] ??= { hex: c.hex, properties: {}, variables: [], translucent: 0, sources: ['rendered page'] });
-			entry.properties[prop] = (entry.properties[prop] || 0) + 1;
+			const entry = (tally[c.hex] ??= newEntry(c.hex));
+			entry.properties[PROP[role]] = (entry.properties[PROP[role]] || 0) + 1;
+			countRole(entry.roles, role, { interactive: flags & 1, heading: flags & 2, nav: flags & 4, large: flags & 8 });
 		}
 		const { coverage } = measureCoverage(decodePng(shot), exclude, Object.keys(tally));
-		for (const hex of Object.keys(coverage)) tally[hex] ??= { hex, properties: { 'blended (overlay or shadow)': 1 }, variables: [], translucent: 0, sources: ['rendered page'] };
+		for (const hex of Object.keys(coverage)) tally[hex] ??= { ...newEntry(hex), properties: { 'blended (overlay or shadow)': 1 } };
+		for (const [name, value] of named) {
+			const t = value.match(/^(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})$/); // "-rgb" style triplets
+			const hex = t ? toHex(+t[1], +t[2], +t[3]) : parseColour(value)?.hex;
+			if (hex && tally[hex] && !tally[hex].variables.includes(name)) tally[hex].variables.push(name);
+		}
 
 		// count = coverage in thousandths, so it ranks like the CSS scrape's counts; colours not visible are dropped.
 		const colours = Object.values(tally)
