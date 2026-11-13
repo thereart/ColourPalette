@@ -1,0 +1,13 @@
+{
+  "name": "colour-palette-simple",
+  "version": "6.0.0",
+  "private": true,
+  "description": "Shows every colour on a web page, ranked by how much of the page it covers.",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node test.mjs"
+  },
+  "dependencies": {
+    "playwright-core": "1.58.2"
+  }
+}

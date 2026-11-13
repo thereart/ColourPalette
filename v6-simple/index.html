@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Colour Palette v6</title>
+<style>
+	* { box-sizing: border-box; }
+	body { margin: 0; font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; color: #1c1c1e; background: #f6f6f4; }
+	main { max-width: 1100px; margin: 0 auto; padding: 48px 24px 80px; }
+	h1 { font-size: 28px; margin: 0 0 4px; }
+	h2 { font-size: 20px; margin: 48px 0 4px; }
+	.lead, .hint { color: #5c5c60; margin: 0 0 20px; }
+	form { display: flex; gap: 8px; flex-wrap: wrap; }
+	label.hidden { position: absolute; left: -9999px; }
+	input { flex: 1 1 320px; font: inherit; padding: 12px 14px; border: 1px solid #c8c8cc; border-radius: 8px; background: #fff; }
+	button { font: inherit; font-weight: 600; padding: 12px 20px; border: 0; border-radius: 8px; background: #1c1c1e; color: #fff; cursor: pointer; }
+	button:disabled { opacity: .6; cursor: wait; }
+	input:focus-visible, button:focus-visible { outline: 3px solid #2b5fd9; outline-offset: 2px; }
+	.status { margin: 16px 0 0; min-height: 24px; }
+	.error { color: #b3261e; }
+
+	/* Top 5, side by side like a Coolors palette. */
+	.palette { display: flex; height: 360px; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 8px 24px rgba(0,0,0,.06); }
+	.palette button { all: unset; flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; padding: 0 8px 28px; cursor: pointer; text-align: center; transition: flex-grow .2s ease; }
+	.palette button:hover { flex-grow: 1.25; }
+	.palette button:focus-visible { outline: 3px solid #2b5fd9; outline-offset: -6px; }
+	.palette .hex { font-size: clamp(16px, 2.4vw, 26px); font-weight: 700; letter-spacing: .02em; }
+	.palette .pct { font-size: 14px; opacity: .8; }
+	.palette .copy { font-size: 12px; opacity: 0; transition: opacity .15s; }
+	.palette button:hover .copy, .palette button:focus-visible .copy { opacity: .8; }
+	@media (prefers-reduced-motion: reduce) { .palette button, .palette .copy { transition: none; } }
+	@media (max-width: 640px) { .palette { flex-direction: column; height: auto; } .palette button { padding: 22px 16px; flex-direction: row; justify-content: space-between; } }
+
+	/* Every colour, most coverage first. */
+	.list { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid #e2e2e4; border-radius: 12px; overflow: hidden; }
+	.list li + li { border-top: 1px solid #ececee; }
+	.list button { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 44px 96px 150px 1fr 70px; align-items: center; gap: 14px; width: 100%; padding: 10px 16px; cursor: pointer; }
+	.list button:hover { background: #fafafa; }
+	.list button:focus-visible { outline: 3px solid #2b5fd9; outline-offset: -3px; }
+	.chip { width: 44px; height: 32px; border-radius: 6px; border: 1px solid rgba(0,0,0,.12); }
+	.code { font-family: ui-monospace, Consolas, monospace; font-size: 14px; }
+	.rgb { color: #5c5c60; font-size: 13px; }
+	.bar { height: 8px; background: #ececee; border-radius: 4px; overflow: hidden; }
+	.bar span { display: block; height: 100%; background: #1c1c1e; border-radius: 4px; }
+	.share { text-align: right; font-variant-numeric: tabular-nums; font-size: 14px; }
+	@media (max-width: 640px) { .list button { grid-template-columns: 44px 1fr 60px; } .list .rgb, .list .bar { display: none; } }
+	[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+	<h1>Colour Palette <small style="font-weight:400;color:#5c5c60">v6</small></h1>
+	<p class="lead">Paste a website address to see every colour on the page, ranked by how much of the page it covers. Images are left out.</p>
+
+	<form id="form">
+		<label class="hidden" for="url">Website address</label>
+		<input id="url" type="text" placeholder="e.g. www.example.com" required autocomplete="url">
+		<button id="go" type="submit">Get colours</button>
+	</form>
+	<p id="status" class="status" role="status" aria-live="polite"></p>
+
+	<section id="results" hidden>
+		<h2>Top 5 colours</h2>
+		<p class="hint">Click a colour to copy its code.</p>
+		<div id="palette" class="palette"></div>
+
+		<h2 id="all-heading">All colours</h2>
+		<p class="hint" id="measured"></p>
+		<ul id="list" class="list"></ul>
+	</section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+// Black or white text, whichever reads better on the colour (WCAG luminance).
+function textFor(hex) {
+	const lum = [1, 3, 5].map((i) => { const v = parseInt(hex.slice(i, i + 2), 16) / 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; })
+		.reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
+	return lum > 0.179 ? '#000' : '#fff';
+}
+const rgb = (hex) => `rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(', ')})`;
+const pct = (share) => (share >= 0.001 ? `${(share * 100).toFixed(share < 0.1 ? 1 : 0)}%` : '<0.1%');
+
+function setStatus(text, isError = false) {
+	$('status').textContent = text;
+	$('status').className = 'status' + (isError ? ' error' : '');
+}
+
+async function copy(hex) {
+	await navigator.clipboard.writeText(hex.toUpperCase());
+	setStatus(`Copied ${hex.toUpperCase()}`);
+}
+
+function render({ url, colours, measured }) {
+	$('palette').replaceChildren(...colours.slice(0, 5).map((c) => {
+		const b = document.createElement('button');
+		b.type = 'button';
+		b.style.background = c.hex;
+		b.style.color = textFor(c.hex);
+		b.innerHTML = `<span class="hex">${c.hex.slice(1).toUpperCase()}</span><span class="pct">${pct(c.coverage)} of the page</span><span class="copy">Click to copy</span>`;
+		b.setAttribute('aria-label', `${c.hex.toUpperCase()}, ${pct(c.coverage)} of the page. Copy`);
+		b.addEventListener('click', () => copy(c.hex));
+		return b;
+	}));
+
+	const top = colours[0]?.coverage || 1;
+	$('all-heading').textContent = `All colours (${colours.length})`;
+	$('measured').textContent = `Measured ${measured.height.toLocaleString()}px of ${measured.pageHeight.toLocaleString()}px of page${measured.imagesLeftOut ? `, with ${measured.imagesLeftOut} images and photo backgrounds left out` : ''}. Shares are of the page outside those images. Click a colour to copy it.`;
+	$('list').replaceChildren(...colours.map((c) => {
+		const li = document.createElement('li');
+		li.innerHTML = `<button type="button" aria-label="${c.hex.toUpperCase()}, ${pct(c.coverage)} of the page. Copy">
+			<span class="chip" style="background:${c.hex}"></span>
+			<span class="code">${c.hex.toUpperCase()}</span>
+			<span class="code rgb">${rgb(c.hex)}</span>
+			<span class="bar"><span style="width:${Math.max(0.5, (c.coverage / top) * 100)}%"></span></span>
+			<span class="share">${pct(c.coverage)}</span></button>`;
+		li.querySelector('button').addEventListener('click', () => copy(c.hex));
+		return li;
+	}));
+	$('results').hidden = false;
+	setStatus(`Done: ${url}`);
+}
+
+$('form').addEventListener('submit', async (e) => {
+	e.preventDefault();
+	const url = $('url').value.trim();
+	if (!url) return;
+	$('go').disabled = true;
+	setStatus('Opening the page and measuring its colours… this can take up to a minute.');
+	try {
+		const res = await fetch(`/api/colours?url=${encodeURIComponent(url)}`);
+		const json = await res.json();
+		if (!res.ok) throw new Error(json.error);
+		render(json);
+	} catch (err) {
+		setStatus(err.message || 'Something went wrong. Is the Colour Palette window still open?', true);
+	} finally {
+		$('go').disabled = false;
+	}
+});
+</script>
+</body>
+</html>
