@@ -95,11 +95,13 @@ export async function renderScrape(url) {
 	try {
 		const page = await browser.newPage({ viewport: { width: 1366, height: 900 }, deviceScaleFactor: 1 });
 		try {
-			await page.goto(url, { waitUntil: 'networkidle', timeout: 45000 });
+			await page.goto(url, { waitUntil: 'load', timeout: 45000 });
 		} catch (err) {
 			// Keep the first line ("net::ERR_NAME_NOT_RESOLVED at ...") and drop Playwright's call log.
 			throw new Error(err.message.split('\n')[0].replace(/^page\.goto:\s*/, ''));
 		}
+		// Give late content a few seconds to arrive. Busy sites (tracking, live chat) never go fully quiet, so this can't fail.
+		await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
 		// The colours the page's CSS uses (and where), plus every image area to leave out, in page coordinates.
 		const { used, exclude, pageHeight } = await page.evaluate(() => {
 			const media = 'img, picture, video, canvas, svg, iframe, object, embed';
